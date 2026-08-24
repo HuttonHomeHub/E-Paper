@@ -56,7 +56,13 @@
 /**
  * Enable it or not according to the actual hardware used, and the corresponding pin
  */
+/* LOCAL MODIFICATION: made overridable so it can be flipped from
+ * platformio.ini (-D D_9PIN=1) without editing this file. Some driver board
+ * revisions gate the panel's power through EPD_PWR_PIN; if the panel never
+ * releases BUSY, enabling this is worth trying. */
+#ifndef D_9PIN
 #define D_9PIN  0
+#endif
 #if D_9PIN
     #define EPD_PWR_PIN 33
 #endif

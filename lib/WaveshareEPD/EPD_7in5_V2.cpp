@@ -83,13 +83,32 @@ static void EPD_SendData2(UBYTE *pData, UDOUBLE len)
 function :	Wait until the busy_pin goes LOW
 parameter:
 ******************************************************************************/
+/* LOCAL MODIFICATION (not upstream Waveshare):
+ * Upstream spins here forever if BUSY never releases, which makes a dead panel
+ * or a badly seated ribbon cable look like a hang with no explanation. Bounded
+ * so it reports the failure instead. Override the limit with
+ * -D EPD_BUSY_TIMEOUT_MS=<ms> in platformio.ini if a slow refresh trips it. */
+#ifndef EPD_BUSY_TIMEOUT_MS
+#define EPD_BUSY_TIMEOUT_MS 20000
+#endif
+
 static void EPD_WaitUntilIdle(void)
 {
     Debug("e-Paper busy\r\n");
-	do{
-		DEV_Delay_ms(5);  
-	}while(!(DEV_Digital_Read(EPD_BUSY_PIN)));   
-	DEV_Delay_ms(5);      
+    UDOUBLE waited = 0;
+    while (!(DEV_Digital_Read(EPD_BUSY_PIN))) {
+        DEV_Delay_ms(5);
+        waited += 5;
+        if (waited >= EPD_BUSY_TIMEOUT_MS) {
+            Debug("e-Paper BUSY TIMEOUT - the panel is not responding.\r\n");
+            Debug("  BUSY (GPIO25) stayed low. Check, in this order:\r\n");
+            Debug("  1. Ribbon cable seating and orientation (contacts down).\r\n");
+            Debug("  2. The A/B config switch on the driver board.\r\n");
+            Debug("  3. Panel power gating - try -D D_9PIN=1 in platformio.ini.\r\n");
+            return;
+        }
+    }
+    DEV_Delay_ms(5);
     Debug("e-Paper busy release\r\n");
 }
 /******************************************************************************

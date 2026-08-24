@@ -96,6 +96,18 @@ void setup()
         return;
     }
 
+    // Pre-flight: an idle panel holds BUSY high. Reading low before a single
+    // command has been sent means the ESP32 isn't seeing the panel at all -
+    // almost always the ribbon cable, the A/B switch, or panel power.
+    Serial.print("BUSY line (GPIO25) before init reads: ");
+    Serial.println(DEV_Digital_Read(EPD_BUSY_PIN) ? "HIGH - panel present and idle"
+                                                  : "LOW  - panel not responding (see below)");
+#if D_9PIN
+    Serial.println("Panel power pin (GPIO33) control is ENABLED (D_9PIN=1).");
+#else
+    Serial.println("Panel power pin (GPIO33) control is disabled (D_9PIN=0).");
+#endif
+
     Serial.println("Initialising panel...");
     if (EPD_7IN5_V2_Init() != 0) {
         Serial.println("FAILED: panel did not initialise - check the ribbon cable.");

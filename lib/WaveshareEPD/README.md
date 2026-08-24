@@ -45,3 +45,15 @@ Set in `DEV_Config.h`, and matching the Waveshare e-Paper ESP32 Driver Board:
 It inverts the buffer you hand it, in place, as part of writing the panel's second
 data channel. If you want to reuse a frame buffer across refreshes, redraw it
 rather than assuming it survived the call.
+
+## Local modifications to the vendored code
+
+Two deliberate changes from upstream, both marked `LOCAL MODIFICATION` in the source:
+
+* **`EPD_7in5_V2.cpp` — bounded busy-wait.** Upstream's `EPD_WaitUntilIdle()`
+  spins forever if the panel never releases BUSY, so a badly seated ribbon cable
+  presents as a silent hang. It now times out after `EPD_BUSY_TIMEOUT_MS`
+  (default 20s) and prints what to check.
+* **`DEV_Config.h` — `D_9PIN` is overridable.** Wrapped in `#ifndef` so panel
+  power gating on GPIO33 can be enabled with `-D D_9PIN=1` from `platformio.ini`
+  rather than by editing the vendored file.
