@@ -249,6 +249,52 @@ why — keep that habit in anything you build on top of this.
 
 ---
 
+## The calendar screen
+
+The default build (`env:calendar`) draws a month grid with an agenda column:
+
+* **Header** — current month and year, today's full date, and a status line.
+* **Month grid** — Monday-first, today's date knocked out white on a black
+  block, and up to three dots under any day that has events. Days either side
+  of the month are drawn smaller so they recede.
+* **Agenda** — what's coming up, grouped under `TODAY` / `TOMORROW` / `WED 26
+  Aug`, with over-long titles truncated. Overflow shows as `+ N more`.
+
+**It currently renders placeholder data.** There is no WiFi and no calendar
+feed in this build — the layout is being settled first. Everything the screen
+draws comes from `DummyData_Fill()` in `src/dummy_data.cpp`; swapping that for
+a live source is the only change needed later.
+
+### Previewing without hardware
+
+The renderer is deliberately free of Arduino and network code, so the exact
+screen the ESP32 draws can be produced on a normal computer:
+
+```
+tools/render.sh calendar.png
+```
+
+That compiles the real `GUI_Paint` and the real renderer against a small
+Arduino shim and writes a PNG. Much faster than a 15-second panel refresh when
+you're nudging a layout.
+
+```
+tools/test.sh
+```
+
+runs the date checks (weekday calculation, leap years, month and year
+rollovers) — the parts that fail silently and wrongly rather than loudly.
+
+### Switching between the two builds
+
+```
+pio run -e calendar -t upload    # the calendar screen (default)
+pio run -e hello    -t upload    # the original hardware test page
+```
+
+In VS Code, the PlatformIO sidebar lists both under **Project Tasks**, each
+with its own Build and Upload. Plain `pio run -t upload` builds the calendar.
+
 ## Where to go next
 
 The drawing API is Waveshare's `GUI_Paint`, declared in
