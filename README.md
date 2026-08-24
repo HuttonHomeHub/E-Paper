@@ -109,32 +109,34 @@ and the board has a matching FPC connector.
    hinged flap along one edge.
 3. Gently flip that flap **up** — it pivots, it does not pull out. Use a
    fingernail; it takes very little force.
-4. Slide the panel's ribbon cable in, **metal contacts facing down** toward the
-   board. This matters — inserted upside down, nothing will happen. Push it in
-   squarely until it stops; the cable's contacts should be fully hidden.
+4. Slide the panel's ribbon cable in and push squarely until it stops.
+
+   **Which way up?** Don't trust a rule of thumb here — it varies by board and
+   cable revision. On the board this project was tested with, contacts face
+   **up**, away from the board. If the cable is in the wrong way the code runs
+   perfectly and hangs at `Initialising panel...`, because the panel never
+   responds. So: if you get that symptom, power down and flip the cable. That
+   is a normal part of first setup, not a mistake.
 5. Flip the flap back **down** to clamp it. Tug the cable very lightly — it
    shouldn't move.
 
 The e-paper panel itself is glass and the ribbon cable is the fragile part. Don't
 fold the ribbon sharply, and don't insert or remove it with power applied.
 
-### The switches on the board
+### The config switch (not on every board)
 
-The driver board carries two small config switches, there so that one board can
-drive Waveshare's whole range of panels:
+Some revisions of the driver board carry a small 2-position DIP switch — a tiny
+plastic block with two sliders, usually near the USB socket:
 
-* **Interface Config** — set to **0**. This selects 4-wire SPI, which is the mode
-  this code uses. (`1` is 3-wire SPI.)
-* **Display Config** — has an **A** and a **B** position, selecting between two
-  panel wiring variants. Waveshare's own advice when you're unsure is to **start
-  on A**; if the panel won't drive at all, or refreshes but shows a scrambled
-  image, power down and flip it to **B**. There's a per-panel table on the
-  [board's wiki page](https://www.waveshare.com/wiki/E-Paper_ESP32_Driver_Board)
-  if you want to confirm the intended setting for the 7.5" panel rather than
-  trying both.
+* **Switch 1** — display mode select (**A** / **B**), selecting between two panel
+  wiring variants. Waveshare's advice when unsure is to start on **A**.
+* **Switch 2** — powers the USB-to-UART chip. Must be **ON** or you cannot
+  upload at all.
 
-Some board revisions also have a power switch for the USB-to-UART section — if
-the board doesn't enumerate at all, check that it's set to **ON**.
+**Several revisions have no switch at all**, including the one this project was
+tested on. If you can't find it, that's fine — there's nothing to set. Plug in
+and carry on; if a COM port appears in Device Manager, the USB-UART side is
+powered either way.
 
 ### Pin mapping (for reference)
 
@@ -211,12 +213,23 @@ lower `upload_speed` in `platformio.ini` from `921600` to `115200`.
 **"Could not open port" / "Access denied"** — the serial monitor is still holding
 the port. Close it before uploading. On Linux, check you're in the `dialout` group.
 
-**The serial log runs all the way through but the screen stays blank** — power the
-board off and re-seat the ribbon cable, contacts down and fully inserted. That's
-by far the most common cause. Then check the display config switch is on **B**.
+**The log stops at `Initialising panel...` / `e-Paper busy`, or reports
+`BUSY TIMEOUT`** — the panel never released its BUSY line, so the ESP32 is
+getting no electrical response from it. In order:
 
-**"FAILED: panel did not initialise"** in the log — the BUSY line never responded.
-Same checks: ribbon cable seating and orientation.
+1. **Flip the ribbon cable over.** Power down first. This is the most common
+   cause by a wide margin, and the orientation is not what most guides claim.
+2. Re-seat it fully and make sure the latch is properly closed — a cable that's
+   inserted but unclamped behaves exactly like no cable.
+3. If your board has the A/B switch, flip it.
+4. Try `-D D_9PIN=1` in `platformio.ini`. Some revisions gate the panel's power
+   through GPIO33, in which case the panel is never switched on at all.
+
+The `BUSY line (GPIO25) before init reads:` line in the log narrows this down:
+`LOW` before any command is sent means the fault is physical, not in the code.
+
+**The serial log runs all the way through to `Done.` but the screen stays blank**
+— same physical checks as above, starting with the ribbon cable.
 
 **The image appears but is scrambled, doubled or shifted** — first flip the
 Display Config switch (A ↔ B) with the power off and try again. If that doesn't
