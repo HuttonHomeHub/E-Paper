@@ -1,0 +1,4 @@
+Project header files go here.
+
+Anything you #include from src/ that is specific to this project (rather than
+part of the vendored Waveshare driver in lib/) belongs in this folder.

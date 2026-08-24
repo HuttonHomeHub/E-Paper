@@ -1,0 +1,10 @@
+{
+  "name": "WaveshareEPD",
+  "version": "1.0.0",
+  "description": "Waveshare e-Paper driver for the 7.5inch 800x480 black/white raw panel (EPD_7IN5_V2) on the Waveshare e-Paper ESP32 Driver Board. Vendored from Waveshare's official e-Paper repository.",
+  "keywords": ["e-paper", "epaper", "eink", "waveshare", "esp32"],
+  "authors": [{ "name": "Waveshare", "url": "https://github.com/waveshareteam/e-Paper" }],
+  "license": "MIT",
+  "frameworks": "arduino",
+  "platforms": "espressif32"
+}
