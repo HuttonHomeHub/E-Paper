@@ -264,6 +264,13 @@ Paint_DrawCircle(x, y, r, BLACK, DOT_PIXEL_1X1, DRAW_FILL_FULL);
 Paint_DrawBitMap(imageArray);                                // full-screen image
 ```
 
+Colour arguments are always **foreground first, then background**. Note that
+this differs from Waveshare's own examples: their `GUI_Paint` passed the pair
+backwards in `Paint_DrawString_EN`, `Paint_DrawNum` and `Paint_DrawTime`, which
+turned black-on-white text into white text on a black block. That is fixed here
+(see `lib/WaveshareEPD/README.md`), so **swap the two colour arguments in any
+snippet you copy from Waveshare's demos.**
+
 Fonts available: `Font8`, `Font12`, `Font16`, `Font20`, `Font24` (the number is
 the pixel height). Rotate the whole canvas by passing `ROTATE_90` / `ROTATE_180` /
 `ROTATE_270` to `Paint_NewImage()`.

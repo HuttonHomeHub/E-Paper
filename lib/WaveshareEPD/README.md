@@ -57,3 +57,14 @@ Two deliberate changes from upstream, both marked `LOCAL MODIFICATION` in the so
 * **`DEV_Config.h` — `D_9PIN` is overridable.** Wrapped in `#ifndef` so panel
   power gating on GPIO33 can be enabled with `-D D_9PIN=1` from `platformio.ini`
   rather than by editing the vendored file.
+* **`GUI_Paint.cpp` — swapped colour arguments.** Upstream
+  `Paint_DrawString_EN`, `Paint_DrawNum` and `Paint_DrawTime` each passed
+  `(Color_Background, Color_Foreground)` down to `Paint_DrawChar`, the reverse
+  of their own declared parameter order, so black-on-white came out as white
+  text on a black block. `Paint_DrawChar` and `Paint_DrawString_CN` did not
+  have the swap, so the library disagreed with itself. All three call sites now
+  pass the pair in the declared order.
+
+  **If you paste a Waveshare demo snippet into this project, exchange its two
+  colour arguments** — their examples are written against the swapped
+  behaviour.
