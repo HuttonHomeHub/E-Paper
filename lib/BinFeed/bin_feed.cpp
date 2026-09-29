@@ -61,10 +61,16 @@ static const char *const kBadFeed   = "Calendar feed unreadable";
 static const char *const kEmptyFeed = "No bin dates in the feed";
 
 #ifdef BINFEED_TEST_FAIL_LOADS
-/* Bench-test switch, off in normal builds: the first N calls to BinFeed_Load()
- * skip the network and fail, so the stale-copy fallback and the quiet retries
- * can be watched on the real board without switching the router off. The count
- * lives in RTC memory so it survives deep sleep. */
+/* Bench-test switches, off in normal builds. After BINFEED_TEST_PASS_LOADS
+ * normal loads (default 0), the next BINFEED_TEST_FAIL_LOADS calls to
+ * BinFeed_Load() skip the network and fail, so the stale-copy fallback and the
+ * quiet retries can be watched on the real board without switching the router
+ * off. Passing a few loads first lets the clock get set, which the stale
+ * fallback needs. The counts live in RTC memory so they survive deep sleep. */
+#ifndef BINFEED_TEST_PASS_LOADS
+#define BINFEED_TEST_PASS_LOADS 0
+#endif
+static RTC_DATA_ATTR int gTestPassLeft  = BINFEED_TEST_PASS_LOADS;
 static RTC_DATA_ATTR int gTestFailsLeft = BINFEED_TEST_FAIL_LOADS;
 #endif
 
@@ -278,9 +284,12 @@ bool BinFeed_Load(BinView *view, const char **error)
     bool fresh = false;
 
 #ifdef BINFEED_TEST_FAIL_LOADS
-    const bool simulateFailure = gTestFailsLeft > 0;
-    if (simulateFailure) {
+    bool simulateFailure = false;
+    if (gTestPassLeft > 0) {
+        gTestPassLeft--;
+    } else if (gTestFailsLeft > 0) {
         gTestFailsLeft--;
+        simulateFailure = true;
         Serial.println("Feed: TEST BUILD - simulating a failed download.");
     }
 #else

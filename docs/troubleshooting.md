@@ -45,8 +45,15 @@ three clear cycles.
 **A black "OUT OF DATE - last updated ..." banner on the bin page** — the board
 couldn't download the calendar (after two tries) and is showing the last good
 copy it saved, so the dates may be wrong or missing recent changes. Check the
-WiFi and the serial log (`Feed failed: ...` gives the reason); the page fixes
-itself at the next successful refresh (a BOOT wake onto the page, or midnight).
+WiFi and the serial log (`Feed failed: ...` gives the reason). The board retries
+quietly after 1, 2 and 4 hours, then hourly (`Retry in N min` in the log), and
+redraws the page as soon as one works; a BOOT wake onto the page or the midnight
+refresh also try again.
+
+**A black "CALENDAR ENDS SOON - last date ..." banner** — the council feed only
+covers about five months and its last date is within 14 days. Nothing is wrong
+with the board; the council needs to publish more dates. "CALENDAR ENDED"
+means the last date has passed.
 
 **A black "SAMPLE DATA" banner** — WiFi details aren't set in `include/secrets.h`
 (or the file is missing), so the page is showing made-up dates.

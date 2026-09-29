@@ -34,5 +34,6 @@ secrets.h
 platformio_local.ini
 .env
 
-# Output of tools/preview.sh
+# Output of tools/preview.sh and tools/golden.sh
 preview-*.png
+golden-actual/

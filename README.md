@@ -23,7 +23,7 @@ its image with no power). **Press BOOT to show the next page; press RESET to
 start again from the calendar.** The board also wakes just after midnight to
 redraw, so the dates roll over on their own. Pages show dates, never the time.
 If the bin dates can't be refreshed, the last saved copy is shown under a clear
-"OUT OF DATE" banner.
+"OUT OF DATE" banner, and while it is, the board quietly retries in the background.
 
 ## Quick start
 
@@ -43,8 +43,9 @@ No board yet? Preview the screen on your computer and run the tests:
 
 ```
 tools/preview.sh bins             # renders the exact screen the ESP32 draws
-                                  # (or: calendar) to preview-<page>.png
+                                  # (or: calendar; --list shows every state)
 pio test -e native                # unit tests for the date, bin-schedule, feed-parsing and refresh logic
+tools/golden.sh                   # checks every screen against its reference image
 ```
 
 ## Documentation

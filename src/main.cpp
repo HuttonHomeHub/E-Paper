@@ -55,6 +55,18 @@ static bool        gBinHaveView = false;    /* gBinView is usable (fresh or the 
 static bool        gBinSettled  = true;     /* nothing to retry: fresh, or placeholder data */
 static const char *gBinError    = "";
 
+/* "45 s" for short waits (bench builds), "300 min" otherwise. */
+static void printDuration(long seconds)
+{
+    if (seconds < 120) {
+        Serial.print(seconds);
+        Serial.print(" s");
+    } else {
+        Serial.print(seconds / 60);
+        Serial.print(" min");
+    }
+}
+
 static void logHeap(const char *when)
 {
     Serial.print("Heap ");
@@ -126,9 +138,9 @@ static void sleepUntilWake()
     if (seconds > 0) {
         esp_sleep_enable_timer_wakeup((uint64_t)seconds * 1000000ULL);
         Serial.print(isRetry ? "Retry in " : "Automatic refresh in ");
-        Serial.print(seconds / 60);
-        Serial.println(isRetry ? " min (quiet: the panel is only redrawn if it works)."
-                               : " min (just after midnight).");
+        printDuration(seconds);
+        Serial.println(isRetry ? " (quiet: the panel is only redrawn if it works)."
+                               : " (just after midnight).");
     } else {
         Serial.println("Clock not set - no automatic refresh until the bin page has been shown.");
     }

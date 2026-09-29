@@ -14,20 +14,22 @@ lib/BinFeed/               WiFi + HTTPS download of the bin calendar, flash cach
 lib/UkClock/               UK time, NTP sync, countdown to the midnight refresh (Arduino only)
 lib/WaveshareEPD/          vendored Waveshare driver (locally modified, see its README)
 test/                      Unity tests: date maths, bin schedule, ICS parsing, refresh + cache
+test/golden/               reference images for the layout regression check
 .github/workflows/ci.yml   tests + builds on every push; monthly check against the latest platform
-tools/                     host-side preview: preview.sh + stubs in tools/host/
+tools/                     preview.sh, golden.sh (layout check) + host renderer in tools/host/
 docs/                      hardware setup, troubleshooting, this file
 ```
 
 Dependencies point one way: `src/main.cpp` → `CalendarRender` / `BinRender` →
 `UiKit` → `WaveshareEPD`, with everything that decides *what* to show in
-`CalendarCore` (and `BinFeed` / `UkClock` doing the network and clock work). `CalendarCore` knows nothing about the display, which is why
-its logic can be unit tested on a PC.
+`CalendarCore` (and `BinFeed` / `UkClock` doing the network and clock work).
+`CalendarCore` knows nothing about the display, which is why its logic can be
+unit tested on a PC.
 
 ## Pages
 
 The firmware shows one page per boot, then puts the panel and the ESP32 into
-deep sleep. Two things wake it:
+deep sleep. Three things wake it:
 
 * **BOOT (GPIO0)** shows the next page. **RESET** starts again from the
   calendar. The current page is kept in RTC memory across deep sleep.
@@ -36,7 +38,15 @@ deep sleep. Two things wake it:
   known, which happens the first time the bin page is shown after a power-up or
   RESET (the serial log says "Clock not set..." until then). The 5 minutes past
   midnight leaves room for the sleep timer, which is not a precision clock, to
-  wake slightly early. The timing logic is `lib/CalendarCore/refresh_schedule.*`.
+  wake slightly early.
+* **A quiet retry timer**, only while the bin dates are out of date (the
+  download failed and the saved copy is on show). It wakes the board after 1, 2
+  and 4 hours, then hourly, and tries the download again **without touching the
+  panel**: the display is redrawn only if the retry succeeds, so a WiFi outage
+  causes no flashing. The midnight refresh takes over if it comes first. The
+  timing logic is `lib/CalendarCore/refresh_schedule.*`. To watch it on a bench
+  without waiting hours, build with `-DREFRESH_RETRY_UNIT_SECONDS=30`, e.g.
+  `PLATFORMIO_BUILD_FLAGS=-DREFRESH_RETRY_UNIT_SECONDS=30 pio run -t upload`.
 
 **Design rule: pages show dates, never the time of day.** A page is only redrawn
 at midnight (or on a button press), so any clock on it would be wrong within
@@ -49,8 +59,8 @@ of its own.
 
 **Verified on the real board (29 Sep 2026):** panel output, deep sleep, the BOOT
 wake, WiFi join, NTP sync, and the HTTPS download and parse of the live feed
-(10 KB, 59 bin entries). **Not yet verified:** the midnight timer wake, and the
-"OUT OF DATE" fallback to the saved copy.
+(10 KB, 59 bin entries). **Not yet verified:** the midnight timer wake, the
+"OUT OF DATE" fallback to the saved copy, and the quiet retry.
 
 ### Calendar
 
@@ -80,9 +90,13 @@ it:
 * **Following** — each later collection day with its countdown, the bin names,
   and mini icons.
 * **Warning banner** — a solid black strip under the title, shown only when the
-  data can't be fully trusted: `SAMPLE DATA - not your real dates` (no WiFi
-  details configured) or `OUT OF DATE - last updated Tue 27 Sep` (a refresh
-  failed and the last saved copy is being shown). Normal pages have no banner.
+  data needs a caveat, one at a time in this order of priority:
+  `OUT OF DATE - last updated Tue 27 Sep` (a refresh failed and the saved copy
+  is on show), `SAMPLE DATA - not your real dates` (no WiFi details configured),
+  or `CALENDAR ENDS SOON - last date Fri 26 Feb` (the last date in the feed is
+  within 14 days, or already past: `CALENDAR ENDED ...`). The council feed only
+  covers about five months, so the last message is the cue that it needs
+  republishing. Normal pages have no banner.
 
 The panel has no colour, so each bin is an icon plus its name, and the hero
 panel captions each with what goes in it. The bins share a wheelie-bin
@@ -110,8 +124,10 @@ lays out what it returns.
 `lib/BinFeed` joins WiFi, sets the clock over NTP (UK time), downloads the
 council's ReCollect calendar (`.ics`) over HTTPS with certificate checking, and
 turns it into bin entries with `IcsBins_Parse()` (`lib/CalendarCore/ics_bins.*`,
-unit tested). The bin page is drawn *before* the panel is powered, so the radio
-and the display never run together.
+unit tested). The download happens *before* the 48 KB display buffer is
+allocated (a secure connection needs a big block of free RAM) and before the
+panel is powered, so neither is in the way. The serial log prints the free heap
+before and after.
 
 If a download fails it is retried once. If it still fails, the page shows the
 **last good copy**, which every successful download saves to flash
@@ -153,11 +169,12 @@ nothing are ignored.
 
 On the bin page the serial log also shows the fetch (`Feed: joining WiFi...`,
 `syncing clock...`, `downloading calendar...`, then the byte and entry counts),
-which is the first place to look if the page shows an error.
+which is the first place to look if the page shows an error. A connection that
+never gets a response also logs the TLS error (e.g. a certificate problem).
 
 The feed is cached for 12 hours by its server and holds roughly the next five
 months. It is downloaded fresh every time the bin page is drawn: on each BOOT
-wake onto it, and at the midnight refresh.
+wake onto it, at the midnight refresh, and on each quiet retry.
 
 ## Commands
 
@@ -166,15 +183,29 @@ pio run                     # build the firmware
 pio run -t upload           # flash it
 pio device monitor          # serial output, 115200 baud
 pio test -e native          # unit tests, run on the host (no board needed)
-tools/preview.sh bins       # render a page to preview-bins.png (or: calendar)
-                            # needs g++ and zlib; optional 2nd arg is the output path
+tools/preview.sh bins       # render a screen to preview-bins.png (needs g++ and zlib)
+tools/preview.sh --list     # every screen/state it can render
+tools/golden.sh             # layout regression check against test/golden/
+tools/golden.sh --update    # accept an intended layout change
 ```
 
 `tools/preview.sh` compiles the real renderers and the real `GUI_Paint` against
 small Arduino stand-ins in `tools/host/`, so it is much faster than a 15-second
-panel refresh when nudging a layout. If shared code starts using a new Arduino
-API, add a stub for it in `tools/host/Arduino.h`; if a renderer library is added,
-add it to the compile line in `preview.sh`.
+panel refresh when nudging a layout. It can render any *scenario* (a screen plus
+fixed data): the calendar, the bin page normally, with 1 or 5 bins, on a
+collection day, far out, empty, and with each warning banner and the error
+screen. If shared code starts using a new Arduino API, add a stub for it in
+`tools/host/Arduino.h`; if a renderer library is added, add it to
+`tools/host/build.sh`.
+
+**Layout regression check.** `tools/golden.sh` renders every scenario and
+compares it, pixel for pixel, with the reference PNG in `test/golden/`. It runs
+in CI, and on a difference exits with an error and saves the actual images to
+`golden-actual/` (CI uploads them as an artifact). After an *intended* layout
+change, run `tools/golden.sh --update`, look at the changed images in
+`test/golden/` (GitHub shows image diffs), and commit them with the change.
+Rendering is integer-only, so it is identical on Windows and Linux. To cover a
+new state, add a scenario in `tools/host/host_render.cpp` and run `--update`.
 
 New tests go in `test/test_<name>/` and only cover code that builds without the
 Arduino framework (the `native` env ignores `CalendarRender`, `BinRender`,
@@ -186,14 +217,16 @@ Arduino framework (the `native` env ignores `CalendarRender`, `BinRender`,
 1. Model and logic in `lib/CalendarCore/` (with tests), drawing in a new
    `lib/<Name>Render/` that depends on `UiKit`. Give the new library a
    `library.json` like the existing ones.
-2. Add it to `lib/*` in `tools/preview.sh`, and a case in `tools/host/host_render.cpp`.
+2. Add it to the compile line in `tools/host/build.sh`, add scenarios in
+   `tools/host/host_render.cpp`, and run `tools/golden.sh --update`.
 3. Add a `Page` value, a name and a `drawPage()` case in `src/main.cpp`.
 4. Add the library to `lib_ignore` under `[env:native]` in `platformio.ini`.
 
 ## Continuous integration and versions
 
 `.github/workflows/ci.yml` runs on every push and pull request: the unit tests,
-a firmware build with no `secrets.h` (placeholder data), and a firmware build
+the layout check against the golden images, a firmware build with no
+`secrets.h` (placeholder data), and a firmware build
 with the live-feed path compiled in (it fails if the HTTP client isn't linked,
 which guards the `-Iinclude` setting). The same commands work locally, so a
 green local run predicts a green CI run.
@@ -209,6 +242,16 @@ from the Actions tab) removes the pins and builds against the newest platform.
   before upgrading.
 * In between, upgrade when you need a fix or feature from a release, or roughly
   once a quarter.
+
+## Flash layout
+
+`platformio.ini` uses the `huge_app.csv` partition layout: one 3 MB app slot
+instead of the default two 1.25 MB slots, so the firmware (about 1 MB) uses about
+a third of its space. There are **no wireless (OTA) updates**; the board is
+updated over USB. The NVS area that holds the saved bin dates is at the same
+address in both layouts, so switching keeps it. If wireless updates are ever
+wanted, go back to the default layout and add signed images with a rollback path
+first, or a bad update could leave a board you can't easily reach unbootable.
 
 ## Drawing with GUI_Paint
 

@@ -30,6 +30,22 @@ jobs:
       - name: Unit tests
         run: pio test -e native
 
+      # Renders every screen and compares it, pixel for pixel, with the reference
+      # images in test/golden/. See tools/golden.sh.
+      - name: Layout (golden images)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq zlib1g-dev
+          bash tools/golden.sh
+
+      - name: Upload the actual images if the layout changed
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-actual
+          path: golden-actual/
+          if-no-files-found: ignore
+
       - name: Build firmware (no secrets.h, placeholder data)
         run: pio run -e esp32
 
