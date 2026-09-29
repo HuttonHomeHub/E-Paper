@@ -37,6 +37,33 @@ int BinSchedule_Build(const BinView *view, BinGroup *out, int maxGroups)
     return n;
 }
 
+int BinSchedule_CalendarEnd(const BinView *view, char *buf, size_t len)
+{
+    if (view == NULL) return 0;
+
+    long last = 0;
+    int any = 0;
+    for (int i = 0; i < view->collectionCount; i++) {
+        const BinCollection *c = &view->collections[i];
+        if ((int)c->bin < 0 || (int)c->bin >= BIN_TYPE_COUNT) continue;
+        const long serial = Cal_DaysFromCivil(c->year, c->month, c->day);
+        if (!any || serial > last) last = serial;
+        any = 1;
+    }
+    if (!any) return 0;
+
+    const long today = Cal_DaysFromCivil(view->todayYear, view->todayMonth, view->todayDay);
+    const long left  = last - today;
+    if (left > BIN_ENDS_SOON_DAYS) return 0;
+
+    int y, m, d;
+    Cal_CivilFromDays(last, &y, &m, &d);
+    snprintf(buf, len, "CALENDAR %s - last date %.3s %d %.3s",
+             left < 0 ? "ENDED" : "ENDS SOON",
+             Cal_WeekdayName(Cal_DayOfWeekMon0(y, m, d)), d, Cal_MonthName(m));
+    return 1;
+}
+
 int BinSchedule_CountBins(unsigned mask)
 {
     int n = 0;

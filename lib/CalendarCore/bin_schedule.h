@@ -11,6 +11,10 @@
 
 #define BIN_MAX_GROUPS 8
 
+/* The calendar-ending banner appears once the last date in the data is this
+ * close (or already past). */
+#define BIN_ENDS_SOON_DAYS 14
+
 /* All the bins collected on one day. */
 typedef struct {
     long     serial;        /* Cal_DaysFromCivil() of the collection day */
@@ -45,6 +49,13 @@ void Bin_Advice(int daysAway, char *buf, size_t len);
 /* Banner text for data that could not be refreshed, given the date it was last
  * good: "OUT OF DATE - last updated Tue 27 Sep". */
 void Bin_StaleWarning(char *buf, size_t len, int year, int month, int day);
+
+/* If the last collection date in `view` is within BIN_ENDS_SOON_DAYS of today,
+ * or already past, writes banner text and returns 1; otherwise returns 0:
+ *   "CALENDAR ENDS SOON - last date Fri 26 Feb"
+ *   "CALENDAR ENDED - last date Fri 26 Feb"
+ * Invalid bin types are ignored, as elsewhere. */
+int BinSchedule_CalendarEnd(const BinView *view, char *buf, size_t len);
 
 /* Compact countdown for the list: "Today", "Tomorrow", "In 8 days". */
 void Bin_DaysAwayText(int daysAway, char *buf, size_t len);

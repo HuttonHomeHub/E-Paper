@@ -88,6 +88,43 @@ static void test_invalid_bin_and_empty_input_are_safe(void)
     TEST_ASSERT_EQUAL_INT(0, BinSchedule_Build(NULL, g, BIN_MAX_GROUPS));
 }
 
+static void test_calendar_end_banner_boundary(void)
+{
+    char b[64];
+    /* Today is Mon 24 Aug. The latest date counts, wherever it is in the list. */
+    BinCollection c[] = { { 2026, 9, 7, BIN_BLUE }, { 2026, 9, 4, BIN_FOOD } };
+    BinView v = viewOf(c, 2);
+
+    /* 7 Sep is 14 days away: inside the window, so the banner shows. */
+    TEST_ASSERT_EQUAL_INT(1, BinSchedule_CalendarEnd(&v, b, sizeof b));
+    TEST_ASSERT_EQUAL_STRING("CALENDAR ENDS SOON - last date Mon 7 Sep", b);
+
+    /* 8 Sep is 15 days away: one day too far, so no banner. */
+    c[0].day = 8;
+    TEST_ASSERT_EQUAL_INT(0, BinSchedule_CalendarEnd(&v, b, sizeof b));
+}
+
+static void test_calendar_end_banner_when_ended_or_empty(void)
+{
+    char b[64];
+    const BinCollection past[] = { { 2026, 8, 20, BIN_BLUE } };
+    BinView v = viewOf(past, 1);
+    TEST_ASSERT_EQUAL_INT(1, BinSchedule_CalendarEnd(&v, b, sizeof b));
+    TEST_ASSERT_EQUAL_STRING("CALENDAR ENDED - last date Thu 20 Aug", b);
+
+    const BinCollection today[] = { { 2026, 8, 24, BIN_BLUE } };
+    v = viewOf(today, 1);
+    TEST_ASSERT_EQUAL_INT(1, BinSchedule_CalendarEnd(&v, b, sizeof b));    /* last date is today */
+    TEST_ASSERT_EQUAL_STRING("CALENDAR ENDS SOON - last date Mon 24 Aug", b);
+
+    v = viewOf(today, 0);                                                  /* nothing at all */
+    TEST_ASSERT_EQUAL_INT(0, BinSchedule_CalendarEnd(&v, b, sizeof b));
+    const BinCollection bad[] = { { 2026, 8, 25, (BinType)99 } };
+    v = viewOf(bad, 1);                                                    /* only invalid bins */
+    TEST_ASSERT_EQUAL_INT(0, BinSchedule_CalendarEnd(&v, b, sizeof b));
+    TEST_ASSERT_EQUAL_INT(0, BinSchedule_CalendarEnd(NULL, b, sizeof b));
+}
+
 static void test_mask_helpers(void)
 {
     const unsigned m = (1u << BIN_BLUE) | (1u << BIN_GARDEN);
@@ -130,6 +167,8 @@ int main(int, char **)
     RUN_TEST(test_year_rollover_counts_days);
     RUN_TEST(test_group_limit_keeps_the_earliest_days);
     RUN_TEST(test_invalid_bin_and_empty_input_are_safe);
+    RUN_TEST(test_calendar_end_banner_boundary);
+    RUN_TEST(test_calendar_end_banner_when_ended_or_empty);
     RUN_TEST(test_mask_helpers);
     RUN_TEST(test_labels);
     return UNITY_END();

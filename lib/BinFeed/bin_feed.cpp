@@ -36,6 +36,12 @@ extern const uint8_t rootca_crt_bundle_start[] asm("_binary_x509_crt_bundle_star
 
 static BinCollection gCollections[FEED_MAX_ENTRIES];
 static char          gWarning[64];
+static bool          gLastFresh = false;
+
+bool BinFeed_LastLoadWasFresh()
+{
+    return gLastFresh;
+}
 
 bool BinFeed_Configured()
 {
@@ -53,6 +59,14 @@ static const char *const kClockFail = "Could not get the time";
 static const char *const kHttpFail  = "Calendar feed unreachable";
 static const char *const kBadFeed   = "Calendar feed unreadable";
 static const char *const kEmptyFeed = "No bin dates in the feed";
+
+#ifdef BINFEED_TEST_FAIL_LOADS
+/* Bench-test switch, off in normal builds: the first N calls to BinFeed_Load()
+ * skip the network and fail, so the stale-copy fallback and the quiet retries
+ * can be watched on the real board without switching the router off. The count
+ * lives in RTC memory so it survives deep sleep. */
+static RTC_DATA_ATTR int gTestFailsLeft = BINFEED_TEST_FAIL_LOADS;
+#endif
 
 /* ------------------------------------------------------------- flash cache -- */
 
@@ -220,7 +234,21 @@ static bool downloadFeed(int *count, const char **error)
     const int code = http.GET();
     if (code != HTTP_CODE_OK) {
         Serial.print("Feed: HTTP status ");
-        Serial.println(code);
+        Serial.print(code);
+        if (code < 0) {                     /* never got a response: say why */
+            Serial.print(" (");
+            Serial.print(HTTPClient::errorToString(code));
+            Serial.print(")");
+            char tls[128] = { 0 };
+            const int tlsCode = client.lastError(tls, sizeof(tls));
+            if (tlsCode != 0) {
+                Serial.print(", TLS error ");
+                Serial.print(tlsCode);
+                Serial.print(": ");
+                Serial.print(tls);
+            }
+        }
+        Serial.println();
         http.end();
         *error = kHttpFail;
         return false;
@@ -244,11 +272,22 @@ static bool downloadFeed(int *count, const char **error)
 
 bool BinFeed_Load(BinView *view, const char **error)
 {
+    gLastFresh = false;
     const char *reason = kWifiFail;
     int count = 0;
     bool fresh = false;
 
-    for (int attempt = 0; attempt < FEED_ATTEMPTS && !fresh; attempt++) {
+#ifdef BINFEED_TEST_FAIL_LOADS
+    const bool simulateFailure = gTestFailsLeft > 0;
+    if (simulateFailure) {
+        gTestFailsLeft--;
+        Serial.println("Feed: TEST BUILD - simulating a failed download.");
+    }
+#else
+    const bool simulateFailure = false;
+#endif
+
+    for (int attempt = 0; attempt < FEED_ATTEMPTS && !fresh && !simulateFailure; attempt++) {
         if (attempt > 0) {
             Serial.println("Feed: retrying...");
             delay(FEED_RETRY_DELAY_MS);
@@ -279,7 +318,8 @@ bool BinFeed_Load(BinView *view, const char **error)
         saveCache(count, BinCache_DateKey(view->todayYear, view->todayMonth, view->todayDay));
         view->collections     = gCollections;
         view->collectionCount = count;
-        view->warning         = NULL;
+        view->warning         = BinSchedule_CalendarEnd(view, gWarning, sizeof(gWarning)) ? gWarning : NULL;
+        gLastFresh            = true;
         return true;
     }
 
@@ -300,6 +340,7 @@ bool BinFeed_Load(BinView *view, const char **error)
     view->collections     = gCollections;
     view->collectionCount = cached;
     view->warning         = gWarning;
+    gLastFresh            = false;
     return true;
 }
 

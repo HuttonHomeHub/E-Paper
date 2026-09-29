@@ -33,6 +33,50 @@ static void test_wait_is_always_positive_and_at_most_a_day(void)
     }
 }
 
+/* --------------------------------------------------------------- retries -- */
+
+#define U REFRESH_RETRY_UNIT_SECONDS
+
+static void test_retry_delays_back_off_then_settle_at_one_unit(void)
+{
+    TEST_ASSERT_EQUAL_INT32(1 * U, Refresh_RetryDelaySeconds(0));
+    TEST_ASSERT_EQUAL_INT32(2 * U, Refresh_RetryDelaySeconds(1));
+    TEST_ASSERT_EQUAL_INT32(4 * U, Refresh_RetryDelaySeconds(2));
+    TEST_ASSERT_EQUAL_INT32(1 * U, Refresh_RetryDelaySeconds(3));
+    TEST_ASSERT_EQUAL_INT32(1 * U, Refresh_RetryDelaySeconds(40));
+}
+
+static void test_no_retry_means_wake_at_midnight_only(void)
+{
+    int retry = 99;
+    TEST_ASSERT_EQUAL_INT32(5000, Refresh_NextWake(5000, -1, &retry));
+    TEST_ASSERT_EQUAL_INT(0, retry);
+    TEST_ASSERT_EQUAL_INT32(0, Refresh_NextWake(-1, -1, &retry));   /* clock unknown: button only */
+    TEST_ASSERT_EQUAL_INT(0, retry);
+}
+
+static void test_a_retry_is_used_only_when_it_comes_before_midnight(void)
+{
+    int retry = 0;
+    /* Plenty of time before midnight: retry first. */
+    TEST_ASSERT_EQUAL_INT32(1 * U, Refresh_NextWake(10 * U, 0, &retry));
+    TEST_ASSERT_EQUAL_INT(1, retry);
+    /* Midnight is sooner than the retry: midnight takes over. */
+    TEST_ASSERT_EQUAL_INT32(U / 2, Refresh_NextWake(U / 2, 0, &retry));
+    TEST_ASSERT_EQUAL_INT(0, retry);
+    /* Exactly tied: midnight wins (a full refresh subsumes the retry). */
+    TEST_ASSERT_EQUAL_INT32(2 * U, Refresh_NextWake(2 * U, 1, &retry));
+    TEST_ASSERT_EQUAL_INT(0, retry);
+}
+
+static void test_retry_works_without_a_known_clock(void)
+{
+    int retry = 0;
+    TEST_ASSERT_EQUAL_INT32(2 * U, Refresh_NextWake(-1, 1, &retry));
+    TEST_ASSERT_EQUAL_INT(1, retry);
+    TEST_ASSERT_EQUAL_INT32(1 * U, Refresh_NextWake(-1, 0, NULL));   /* isRetry is optional */
+}
+
 /* ------------------------------------------------------------- cache codec -- */
 
 static void test_pack_round_trips_every_bin(void)
@@ -73,6 +117,10 @@ int main(int, char **)
     RUN_TEST(test_wait_until_the_next_refresh);
     RUN_TEST(test_the_refresh_instant_itself_waits_a_full_day);
     RUN_TEST(test_wait_is_always_positive_and_at_most_a_day);
+    RUN_TEST(test_retry_delays_back_off_then_settle_at_one_unit);
+    RUN_TEST(test_no_retry_means_wake_at_midnight_only);
+    RUN_TEST(test_a_retry_is_used_only_when_it_comes_before_midnight);
+    RUN_TEST(test_retry_works_without_a_known_clock);
     RUN_TEST(test_pack_round_trips_every_bin);
     RUN_TEST(test_unpack_rejects_corrupt_entries);
     RUN_TEST(test_date_key);

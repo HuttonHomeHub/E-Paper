@@ -19,12 +19,18 @@
 bool BinFeed_Configured();
 
 /* Fills `view` with today's date and the collections: fresh from the feed
- * (view->warning NULL) or, if the feed can't be reached, the last saved copy
- * (view->warning says it is out of date). The view points at static storage,
+ * (view->warning is NULL, or says the calendar is about to run out) or, if the
+ * feed can't be reached, the last saved copy (view->warning says it is out of
+ * date). The view points at static storage,
  * valid until the next call. Turns WiFi off again before returning.
  *
  * Returns false, with a short screen-sized reason in *error, only when there is
  * nothing usable: no fresh data and no saved copy, or the date is unknown. */
 bool BinFeed_Load(BinView *view, const char **error);
+
+/* True if the last successful BinFeed_Load() came straight from the feed, false
+ * if it fell back to the saved copy (or nothing has loaded). A fresh load can
+ * still carry a warning, e.g. that the calendar is about to run out. */
+bool BinFeed_LastLoadWasFresh();
 
 #endif
