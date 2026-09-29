@@ -121,7 +121,7 @@ if you ever need to change them.
 ## Powering it
 
 USB from your computer is enough to drive the 7.5" panel — you don't need a
-separate supply for this test.
+separate supply.
 
 ## Build, flash, watch
 
@@ -152,6 +152,10 @@ Deep sleep. Press BOOT for the next page, RESET to start over.
 roughly 4–5 seconds and the firmware clears the screen first, so allow ~10–15
 seconds from reset to finished image. The panel flashes black and white a few
 times on the way; that is its normal refresh cycle, not a fault.
+
+The Bin Collection page needs your WiFi details first (a 2.4 GHz network); see
+[Live bin data](development.md#live-bin-data). Without them it shows placeholder
+data.
 
 If the log stops early or the screen stays blank, see
 [troubleshooting.md](troubleshooting.md).

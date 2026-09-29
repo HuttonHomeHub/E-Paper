@@ -1,7 +1,7 @@
 /**
- * Placeholder calendar contents, so the screen layout can be built and judged
- * before any live feed exists. Replace DummyData_Fill() with the real source
- * later - nothing else needs to change.
+ * Placeholder contents, so screen layouts can be built and judged without a live
+ * feed. The calendar page has no live source yet; the bin page uses
+ * DummyBinData_Fill() only when include/secrets.h is not filled in.
  */
 #ifndef DUMMY_DATA_H
 #define DUMMY_DATA_H

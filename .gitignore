@@ -28,7 +28,8 @@ desktop.ini
 *.a
 
 # --- Local secrets / per-machine config ---
-# Handy if you later add WiFi credentials or a per-machine serial port override.
+# include/secrets.h holds the WiFi login and calendar link; platformio_local.ini
+# is handy for a per-machine serial port override.
 secrets.h
 platformio_local.ini
 .env

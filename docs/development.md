@@ -12,7 +12,7 @@ lib/CalendarRender/        the calendar screen
 lib/BinRender/             the bin collection screen and its bin icons
 lib/BinFeed/               WiFi + NTP + HTTPS download of the bin calendar (Arduino only)
 lib/WaveshareEPD/          vendored Waveshare driver (locally modified, see its README)
-test/                      Unity tests: test_calendar_date, test_bin_schedule
+test/                      Unity tests: test_calendar_date, test_bin_schedule, test_ics_bins
 tools/                     host-side preview: preview.sh + stubs in tools/host/
 docs/                      hardware setup, troubleshooting, this file
 ```
@@ -31,7 +31,8 @@ deep sleep. The Bin Collection page reads the live calendar feed (see below);
 the Calendar page still shows placeholder data (`src/dummy_data.cpp`) until it
 gets a source of its own.
 
-The button wake has not yet been exercised on hardware.
+Not yet exercised on hardware: the BOOT wake, and the WiFi / NTP / HTTPS
+fetch. Both are compile-checked only.
 
 ### Calendar
 
@@ -119,6 +120,10 @@ and cans; both map to Blue, so either wording works. If a different feed words
 things differently, this table is the one place to change. Events matching
 nothing are ignored.
 
+On the bin page the serial log also shows the fetch (`Feed: joining WiFi...`,
+`syncing clock...`, `downloading calendar...`, then the byte and entry counts),
+which is the first place to look if the page shows an error.
+
 The feed is cached for 12 hours by its server and holds roughly the next five
 months. The page is fetched fresh each time it is shown (each BOOT wake); there
 is no timed refresh, so a page left showing overnight will still say
@@ -143,12 +148,13 @@ add it to the compile line in `preview.sh`.
 
 New tests go in `test/test_<name>/` and only cover code that builds without the
 Arduino framework (the `native` env ignores `CalendarRender`, `BinRender`,
-`UiKit` and `WaveshareEPD`), so keep decision logic in `CalendarCore`.
+`BinFeed`, `UiKit` and `WaveshareEPD`), so keep decision logic in `CalendarCore`.
 
 ### Adding a page
 
 1. Model and logic in `lib/CalendarCore/` (with tests), drawing in a new
-   `lib/<Name>Render/` that depends on `UiKit`.
+   `lib/<Name>Render/` that depends on `UiKit`. Give the new library a
+   `library.json` like the existing ones.
 2. Add it to `lib/*` in `tools/preview.sh`, and a case in `tools/host/host_render.cpp`.
 3. Add a `Page` value, a name and a `drawPage()` case in `src/main.cpp`.
 4. Add the library to `lib_ignore` under `[env:native]` in `platformio.ini`.
