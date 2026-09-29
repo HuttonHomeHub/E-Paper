@@ -29,6 +29,10 @@ int BinSchedule_HasBin(unsigned mask, BinType bin);
 /* The bin's display name, e.g. "Blue"; "" for an invalid type. */
 const char *Bin_Name(BinType bin);
 
+/* What goes in the bin, short enough to caption an icon: "Glass & cans",
+ * "General", "Cardboard", "Food waste", "Garden waste"; "" for an invalid type. */
+const char *Bin_Contents(BinType bin);
+
 /* Big headline for a collection day: "TODAY", "TOMORROW", the upper-case
  * weekday name ("WEDNESDAY") within the week, else "IN 9 DAYS". dowMon0 is
  * 0=Mon .. 6=Sun. */

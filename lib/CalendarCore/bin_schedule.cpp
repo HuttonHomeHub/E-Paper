@@ -63,6 +63,18 @@ const char *Bin_Name(BinType bin)
     }
 }
 
+const char *Bin_Contents(BinType bin)
+{
+    switch (bin) {
+        case BIN_BLUE:   return "Glass & cans";
+        case BIN_BLACK:  return "General";
+        case BIN_RED:    return "Cardboard";
+        case BIN_FOOD:   return "Food waste";
+        case BIN_GARDEN: return "Garden waste";
+        default:         return "";
+    }
+}
+
 void Bin_HeroLabel(int daysAway, int dowMon0, char *buf, size_t len)
 {
     if (daysAway <= 0) { snprintf(buf, len, "TODAY"); return; }

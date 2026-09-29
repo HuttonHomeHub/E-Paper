@@ -74,7 +74,7 @@ static void drawHeroIcons(unsigned mask)
     if (n <= 0) return;
 
     /* Fewer bins get bigger icons so the panel never looks half empty. */
-    static const int kWidth[] = { 0, 112, 112, 104, 92, 80 };
+    static const int kWidth[] = { 0, 104, 104, 100, 90, 78 };
     const int w = kWidth[n > 5 ? 5 : n];
     const int h = w * 4 / 3;
 
@@ -82,9 +82,11 @@ static void drawHeroIcons(unsigned mask)
     int gap = (n > 1) ? (avail - n * w) / (n - 1) : 0;
     if (gap > 28) gap = 28;
 
-    sFONT *nameFont = (w >= 104) ? &Font20 : &Font16;
-    const int nameY = HERO_ICONS_BOTTOM - nameFont->Height;
-    const int iconY = nameY - 8 - h;
+    /* Bottom-up: a small caption of what goes in the bin, its name, then the icon. */
+    sFONT *nameFont = (w >= 100) ? &Font20 : &Font16;
+    const int captionY = HERO_ICONS_BOTTOM - Font12.Height;
+    const int nameY    = captionY - 4 - nameFont->Height;
+    const int iconY    = nameY - 8 - h;
 
     const int total = n * w + (n - 1) * gap;
     int x = HERO_X + (HERO_W - total) / 2;
@@ -93,6 +95,7 @@ static void drawHeroIcons(unsigned mask)
         if (!BinSchedule_HasBin(mask, (BinType)b)) continue;
         BinIcon_Draw((BinType)b, x, iconY, w, h);
         Ui_DrawCentred(x + w / 2, nameY, Bin_Name((BinType)b), nameFont);
+        Ui_DrawCentred(x + w / 2, captionY, Bin_Contents((BinType)b), &Font12);
         x += w + gap;
     }
 }

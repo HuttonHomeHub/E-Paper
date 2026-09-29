@@ -111,6 +111,10 @@ static void test_labels(void)
     Bin_Advice(5, b, sizeof b);       TEST_ASSERT_EQUAL_STRING("In 5 days", b);
     Bin_Advice(9, b, sizeof b);       TEST_ASSERT_EQUAL_STRING("Not this week", b);
     Bin_DaysAwayText(8, b, sizeof b); TEST_ASSERT_EQUAL_STRING("In 8 days", b);
+    TEST_ASSERT_EQUAL_STRING("Glass & cans", Bin_Contents(BIN_BLUE));
+    TEST_ASSERT_EQUAL_STRING("General", Bin_Contents(BIN_BLACK));
+    TEST_ASSERT_EQUAL_STRING("Cardboard", Bin_Contents(BIN_RED));
+    TEST_ASSERT_EQUAL_STRING("", Bin_Contents((BinType)42));
     TEST_ASSERT_EQUAL_STRING("Garden", Bin_Name(BIN_GARDEN));
     TEST_ASSERT_EQUAL_STRING("", Bin_Name((BinType)42));
 }

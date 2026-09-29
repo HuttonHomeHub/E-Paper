@@ -27,6 +27,14 @@ static void test_summary_is_case_insensitive_and_accepts_colour_names(void)
     TEST_ASSERT_EQUAL_UINT(MASK(BIN_RED),   IcsBins_FromSummary("Red bin"));
 }
 
+static void test_wording_for_each_bin_as_the_household_names_it(void)
+{
+    TEST_ASSERT_EQUAL_UINT(MASK(BIN_BLUE),  IcsBins_FromSummary("Glass and cans"));
+    TEST_ASSERT_EQUAL_UINT(MASK(BIN_BLACK), IcsBins_FromSummary("General waste"));
+    TEST_ASSERT_EQUAL_UINT(MASK(BIN_RED),   IcsBins_FromSummary("Cardboard"));
+    TEST_ASSERT_EQUAL_UINT(0, IcsBins_FromSummary("Scans and pelicans"));   /* "cans" inside words */
+}
+
 static void test_colour_words_need_whole_word_matches(void)
 {
     TEST_ASSERT_EQUAL_UINT(0, IcsBins_FromSummary("Shredded reduced bluebell"));
@@ -139,6 +147,7 @@ int main(int, char **)
     UNITY_BEGIN();
     RUN_TEST(test_summary_wording_from_the_real_feed);
     RUN_TEST(test_summary_is_case_insensitive_and_accepts_colour_names);
+    RUN_TEST(test_wording_for_each_bin_as_the_household_names_it);
     RUN_TEST(test_colour_words_need_whole_word_matches);
     RUN_TEST(test_parses_events_into_one_entry_per_bin);
     RUN_TEST(test_lf_endings_and_datetime_dtstart);

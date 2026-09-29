@@ -60,11 +60,21 @@ it:
 * **Following** — each later collection day with its countdown, the bin names,
   and mini icons.
 
-The panel has no colour, so each bin is an icon plus its name. The five bins
-(Blue, Black, Red, Food, Garden) share a wheelie-bin silhouette and are told
-apart by a mark on the body (Black is solid, Blue a triangle, Red a band,
-Garden a sprig); Food is a caddy. The marks are placeholders and easy to change
-in [`bin_icon.cpp`](../lib/BinRender/bin_icon.cpp).
+The panel has no colour, so each bin is an icon plus its name, and the hero
+panel captions each with what goes in it. The bins share a wheelie-bin
+silhouette and each carries a picture of its contents:
+
+| Bin | Contents | Icon |
+| --- | --- | --- |
+| Blue | Glass & cans | a bottle and a can on an outlined bin |
+| Black | General | a tied rubbish sack, knocked out of a solid bin |
+| Red | Cardboard | a box with a flap and tape |
+| Food | Food waste | a caddy with a handle and vent slits |
+| Garden | Garden waste | a sprig |
+
+The icons are drawn from GUI_Paint primitives in
+[`bin_icon.cpp`](../lib/BinRender/bin_icon.cpp) and the captions come from
+`Bin_Contents()`.
 
 Data model: [`bin_data.h`](../lib/CalendarCore/bin_data.h), a flat list of
 (date, bin) entries in any order. `BinSchedule_Build()` sorts them, merges bins
@@ -96,16 +106,18 @@ table is `IcsBins_FromSummary()`:
 
 | Wording in the event title | Bin |
 | --- | --- |
-| `plastic`, or the word `blue` | Blue |
-| `refuse`, `rubbish`, or the word `black` | Black |
-| `paper`, or the word `red` | Red |
+| `plastic`, `glass`, the word `cans`, or the word `blue` | Blue |
+| `refuse`, `rubbish`, the word `general`, or the word `black` | Black |
+| `paper`, `cardboard`, or the word `red` | Red |
 | `food` | Food |
 | `garden` | Garden |
 
 For example "Food waste, plastic recycling (blue-lid bin...), and refuse
-(household rubbish)" is Blue + Black + Food. Refuse being the black bin is an
-assumption based on the wording; if a different feed words things differently,
-this is the one place to change. Events matching nothing are ignored.
+(household rubbish)" is Blue + Black + Food. Note the council's own wording
+calls the blue bin "plastic recycling" while the household describes it as glass
+and cans; both map to Blue, so either wording works. If a different feed words
+things differently, this table is the one place to change. Events matching
+nothing are ignored.
 
 The feed is cached for 12 hours by its server and holds roughly the next five
 months. The page is fetched fresh each time it is shown (each BOOT wake); there

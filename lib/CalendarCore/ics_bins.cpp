@@ -42,10 +42,13 @@ unsigned IcsBins_FromSummary(const char *summary)
     unsigned mask = 0;
     if (hasSubstring(s, "garden"))                                   mask |= 1u << BIN_GARDEN;
     if (hasSubstring(s, "food"))                                     mask |= 1u << BIN_FOOD;
-    if (hasSubstring(s, "plastic")   || hasWord(s, "blue"))          mask |= 1u << BIN_BLUE;
+    if (hasSubstring(s, "plastic") || hasSubstring(s, "glass")
+                                     || hasWord(s, "cans") || hasWord(s, "blue"))  mask |= 1u << BIN_BLUE;
     if (hasSubstring(s, "refuse") || hasSubstring(s, "rubbish")
+                                     || hasWord(s, "general")
                                      || hasWord(s, "black"))         mask |= 1u << BIN_BLACK;
-    if (hasSubstring(s, "paper")     || hasWord(s, "red"))           mask |= 1u << BIN_RED;
+    if (hasSubstring(s, "paper") || hasSubstring(s, "cardboard")
+                                     || hasWord(s, "red"))           mask |= 1u << BIN_RED;
     return mask;
 }
 
