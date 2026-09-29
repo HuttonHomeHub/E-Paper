@@ -1,7 +1,10 @@
 # E-Paper — Waveshare 7.5" (800×480) on an ESP32 driver board
 
-A starter PlatformIO project that draws a test page to a Waveshare 7.5inch
-e-Paper panel from a Waveshare e-Paper ESP32 Driver Board.
+A PlatformIO project that draws to a Waveshare 7.5inch e-Paper panel from a
+Waveshare e-Paper ESP32 Driver Board. It has two builds: a calendar screen
+(the default, currently on placeholder data — see [The calendar screen](#the-calendar-screen))
+and the original hardware test page (`env:hello`) described in the next
+section, which is the one to use when checking wiring.
 
 | | |
 | --- | --- |
@@ -10,13 +13,14 @@ e-Paper panel from a Waveshare e-Paper ESP32 Driver Board.
 | **Driver used** | `EPD_7IN5_V2` — Waveshare's official driver for the 800×480 B/W panel |
 | **Framework** | Arduino, via PlatformIO |
 
-The `.ino`-style sketch lives in [`src/main.cpp`](src/main.cpp). Waveshare's
+The sketches live in [`src/main_calendar.cpp`](src/main_calendar.cpp) and
+[`src/main_hello.cpp`](src/main_hello.cpp). Waveshare's
 driver code is vendored into [`lib/WaveshareEPD/`](lib/WaveshareEPD/) — see the
 README there for exactly which upstream files were copied and why.
 
 ---
 
-## What the test page draws
+## What the test page draws (`env:hello`)
 
 * A border around the full 800×480 area, plus corner registration marks — if any
   edge or corner is missing, the geometry is wrong, not the code.
@@ -179,11 +183,14 @@ in the blue status bar along the bottom:
 Do them in that order the first time. Build on its own proves your toolchain
 works before you involve the hardware at all.
 
-Once uploaded you should see, in the serial monitor at 115200 baud:
+Once uploaded (`pio run -e hello -t upload` for the test page) you should see,
+in the serial monitor at 115200 baud:
 
 ```
 Waveshare 7.5in e-Paper (800x480 B/W) - hello world
 Allocating frame buffer...
+BUSY line (GPIO25) before init reads: HIGH - panel present and idle
+Panel power pin (GPIO33) control is disabled (D_9PIN=0).
 Initialising panel...
 Clearing panel (this takes a few seconds)...
 Drawing test page...

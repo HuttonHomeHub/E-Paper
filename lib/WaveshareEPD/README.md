@@ -48,7 +48,7 @@ rather than assuming it survived the call.
 
 ## Local modifications to the vendored code
 
-Two deliberate changes from upstream, both marked `LOCAL MODIFICATION` in the source:
+Three deliberate changes from upstream, both marked `LOCAL MODIFICATION` in the source:
 
 * **`EPD_7in5_V2.cpp` — bounded busy-wait.** Upstream's `EPD_WaitUntilIdle()`
   spins forever if the panel never releases BUSY, so a badly seated ribbon cable

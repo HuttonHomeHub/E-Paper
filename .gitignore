@@ -6,7 +6,7 @@
 .gcc-flags.json
 
 # --- Editors / IDEs ---
-.vscode/
+.vscode/*
 !.vscode/extensions.json
 .idea/
 .cache/

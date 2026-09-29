@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 PlatformIO/Arduino firmware for a Waveshare 7.5" e-Paper panel (800x480, black/white, `EPD_7in5_V2` driver) on a Waveshare e-Paper ESP32 Driver Board (`board = esp32dev`). Each build draws one screen in `setup()`, sleeps the panel, and idles in `loop()`; the image persists unpowered and RESET redraws it. The only screen so far is a calendar (month grid + agenda) showing placeholder data; there is no WiFi or live feed yet.
 
-`README.md` is a beginner guide (setup, wiring, troubleshooting). Its line 13 still points at a nonexistent `src/main.cpp`; the entry points are `src/main_calendar.cpp` and `src/main_hello.cpp`.
+`README.md` is a beginner guide (setup, wiring, troubleshooting, calendar preview); keep it in step when behaviour, serial output or build envs change. Entry points are `src/main_calendar.cpp` and `src/main_hello.cpp`. Work happens directly on the `claude/esp32-epaper-platformio-r136dm` branch (the remote's only branch and HEAD); no PRs.
 
 ## Commands
 

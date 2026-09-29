@@ -102,7 +102,7 @@ static void EPD_WaitUntilIdle(void)
         if (waited >= EPD_BUSY_TIMEOUT_MS) {
             Debug("e-Paper BUSY TIMEOUT - the panel is not responding.\r\n");
             Debug("  BUSY (GPIO25) stayed low. Check, in this order:\r\n");
-            Debug("  1. Ribbon cable seating and orientation (contacts down).\r\n");
+            Debug("  1. Ribbon cable seating and orientation (try flipping it over).\r\n");
             Debug("  2. The A/B config switch on the driver board.\r\n");
             Debug("  3. Panel power gating - try -D D_9PIN=1 in platformio.ini.\r\n");
             return;
