@@ -1,0 +1,76 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 7 1 * *"     # monthly: try the newest platform (job "latest")
+
+jobs:
+  pinned:
+    name: Tests and build (pinned versions)
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.platformio
+          key: pio-${{ hashFiles('platformio.ini') }}
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Unit tests
+        run: pio test -e native
+
+      - name: Build firmware (no secrets.h, placeholder data)
+        run: pio run -e esp32
+
+      # secrets.example.h defines every setting, so this compiles the WiFi/HTTPS
+      # path. The grep guards against the live path silently dropping out of the
+      # build (libraries only see include/ because of -Iinclude in platformio.ini).
+      - name: Build firmware (live-feed path)
+        run: |
+          cp include/secrets.example.h include/secrets.h
+          pio run -e esp32
+          NM=$(find ~/.platformio/packages -name 'xtensa-esp32-elf-nm' | head -1)
+          "$NM" .pio/build/esp32/firmware.elf | grep -q HTTPClient
+
+  latest:
+    name: Build against the latest platform
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install PlatformIO
+        run: pip install platformio
+
+      - name: Drop the platform pins
+        run: |
+          sed -i -E 's/^(platform +=) *espressif32 *@ *[^ ]+/\1 espressif32/' platformio.ini
+          sed -i -E 's/^(platform +=) *native *@ *[^ ]+/\1 native/' platformio.ini
+          grep -n '^platform' platformio.ini
+
+      - name: Unit tests
+        run: pio test -e native
+
+      - name: Build firmware
+        run: |
+          cp include/secrets.example.h include/secrets.h
+          pio run -e esp32
+
+      - name: Report what is newer than the pins
+        if: always()
+        run: pio pkg outdated || true
