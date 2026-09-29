@@ -3,7 +3,7 @@
  * using the real GUI_Paint code and the real renderer, and writes it out as a
  * PNG. Lets the layout be reviewed without flashing hardware.
  *
- * Build and run with tools/render.sh
+ * Build and run with tools/preview.sh
  */
 #include "GUI_Paint.h"
 #include "calendar_render.h"

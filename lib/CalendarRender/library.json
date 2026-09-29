@@ -1,0 +1,11 @@
+{
+  "name": "CalendarRender",
+  "version": "1.0.0",
+  "description": "Draws the calendar screen (month grid + agenda) onto a GUI_Paint canvas.",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    { "name": "CalendarCore" },
+    { "name": "WaveshareEPD" }
+  ]
+}

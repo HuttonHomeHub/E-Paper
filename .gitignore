@@ -32,3 +32,6 @@ desktop.ini
 secrets.h
 platformio_local.ini
 .env
+
+# Output of tools/preview.sh
+calendar.png

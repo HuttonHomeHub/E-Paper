@@ -1,0 +1,7 @@
+{
+  "name": "CalendarCore",
+  "version": "1.0.0",
+  "description": "Calendar data model and civil-date arithmetic. No hardware dependencies.",
+  "frameworks": "*",
+  "platforms": "*"
+}
