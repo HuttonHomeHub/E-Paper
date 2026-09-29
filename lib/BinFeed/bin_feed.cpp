@@ -100,6 +100,86 @@ static int loadCache(uint32_t *dateKey)
 
 /* --------------------------------------------------------------- download -- */
 
+static const char *wifiStatusName(int status)
+{
+    switch (status) {
+        case WL_IDLE_STATUS:     return "idle";
+        case WL_NO_SSID_AVAIL:   return "network not found";
+        case WL_SCAN_COMPLETED:  return "scan completed";
+        case WL_CONNECTED:       return "connected";
+        case WL_CONNECT_FAILED:  return "connect failed (wrong password?)";
+        case WL_CONNECTION_LOST: return "connection lost";
+        case WL_DISCONNECTED:    return "disconnected";
+        default:                 return "unknown";
+    }
+}
+
+static const char *authName(int auth)
+{
+    switch (auth) {
+        case WIFI_AUTH_OPEN:            return "open";
+        case WIFI_AUTH_WEP:             return "WEP";
+        case WIFI_AUTH_WPA_PSK:         return "WPA";
+        case WIFI_AUTH_WPA2_PSK:        return "WPA2";
+        case WIFI_AUTH_WPA_WPA2_PSK:    return "WPA/WPA2";
+        case WIFI_AUTH_WPA2_ENTERPRISE: return "WPA2-Enterprise";
+        case WIFI_AUTH_WPA3_PSK:        return "WPA3";
+        case WIFI_AUTH_WPA2_WPA3_PSK:   return "WPA2/WPA3";
+        default:                        return "other";
+    }
+}
+
+/* True if the two names share their first few characters, ignoring case, so a
+ * near-miss ("HuttonHomeHub-5G", a different capitalisation) is spotted. */
+static bool similarName(const String &seen, const char *target)
+{
+    const size_t n = strlen(target) < 6 ? strlen(target) : 6;
+    if (seen.length() < n) return false;
+    for (size_t i = 0; i < n; i++) {
+        if (tolower(seen[i]) != tolower(target[i])) return false;
+    }
+    return true;
+}
+
+/* Says why joining failed: the connection status, and which networks the board
+ * can see that look like ours (it only sees 2.4 GHz). Unrelated neighbours'
+ * names are not printed. */
+static void logWifiFailure()
+{
+    Serial.print("Feed: WiFi status: ");
+    Serial.println(wifiStatusName(WiFi.status()));
+
+    /* A scan fails while a connection attempt is still running, so stop it. */
+    WiFi.disconnect();
+    delay(300);
+    const int found = WiFi.scanNetworks(false, true);
+    if (found < 0) {
+        Serial.print("Feed: scan failed, code ");
+        Serial.println(found);
+        return;
+    }
+    Serial.print("Feed: scan sees ");
+    Serial.print(found);
+    Serial.println(" networks");
+
+    int similar = 0;
+    for (int i = 0; i < found; i++) {
+        if (!similarName(WiFi.SSID(i), WIFI_SSID)) continue;
+        similar++;
+        Serial.print("Feed: similar name \"");
+        Serial.print(WiFi.SSID(i));
+        Serial.print("\": channel ");
+        Serial.print(WiFi.channel(i));
+        Serial.print(", ");
+        Serial.print(WiFi.RSSI(i));
+        Serial.print(" dBm, ");
+        Serial.print(authName(WiFi.encryptionType(i)));
+        Serial.println(WiFi.SSID(i).equals(WIFI_SSID) ? "  <- exact match" : "  <- NOT an exact match");
+    }
+    if (similar == 0) Serial.println("Feed: nothing with a similar name is visible - is it 2.4 GHz, and in range?");
+    WiFi.scanDelete();
+}
+
 static bool connectWifi()
 {
     WiFi.mode(WIFI_STA);
@@ -107,9 +187,15 @@ static bool connectWifi()
 
     const unsigned long start = millis();
     while (WiFi.status() != WL_CONNECTED) {
-        if (millis() - start > WIFI_TIMEOUT_MS) return false;
+        if (millis() - start > WIFI_TIMEOUT_MS) {
+            logWifiFailure();
+            return false;
+        }
         delay(250);
     }
+    Serial.print("Feed: WiFi connected, ");
+    Serial.print(WiFi.RSSI());
+    Serial.println(" dBm");
     return true;
 }
 
@@ -183,7 +269,7 @@ bool BinFeed_Load(BinView *view, const char **error)
     /* Whatever happened, today's date comes from the clock: freshly synced, or
      * still running from an earlier sync through deep sleep. */
     struct tm now;
-    if (!UkClock_Now(&now)) { *error = kClockFail; return false; }
+    if (!UkClock_Now(&now)) { *error = reason; return false; }   /* the root cause, not a guess */
 
     view->todayYear  = now.tm_year + 1900;
     view->todayMonth = now.tm_mon + 1;

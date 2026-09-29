@@ -8,6 +8,7 @@
 #ifndef SECRETS_H
 #define SECRETS_H
 
+/* The WiFi name is case-sensitive. 2.4 GHz networks only. */
 #define WIFI_SSID     ""
 #define WIFI_PASSWORD ""
 

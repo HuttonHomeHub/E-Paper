@@ -47,8 +47,10 @@ The Bin Collection page reads the live calendar feed (see below); the Calendar
 page still shows placeholder data (`src/dummy_data.cpp`) until it gets a source
 of its own.
 
-Not yet exercised on hardware: the BOOT wake, the midnight timer wake, and the
-WiFi / NTP / HTTPS fetch. All are compile-checked only.
+**Verified on the real board (29 Sep 2026):** panel output, deep sleep, the BOOT
+wake, WiFi join, NTP sync, and the HTTPS download and parse of the live feed
+(10 KB, 59 bin entries). **Not yet verified:** the midnight timer wake, and the
+"OUT OF DATE" fallback to the saved copy.
 
 ### Calendar
 
@@ -124,7 +126,8 @@ Set it up once:
 
 1. Copy `include/secrets.example.h` to `include/secrets.h` (gitignored).
 2. Fill in `WIFI_SSID`, `WIFI_PASSWORD` and `BIN_FEED_URL` (use `https://`; a
-   `webcal://` link works with the scheme changed). The link identifies your
+   `webcal://` link works with the scheme changed). **The WiFi name is
+   case-sensitive**: `HuttonHomeHub` is not `HUTTONHOMEHUB`. The link identifies your
    property, so keep it out of the repo.
 3. Rebuild and flash. With no `secrets.h`, or an empty `WIFI_SSID`, the page
    shows placeholder data and the build still works.

@@ -59,7 +59,12 @@ NTP sync failed.
 **The Bin Collection page says "Can't load bin dates"** — nothing usable was
 available (no saved copy yet, or the date is unknown). The second line says
 why. `Could not join WiFi`: check `WIFI_SSID` / `WIFI_PASSWORD` in
-`include/secrets.h` (2.4 GHz networks only). `Could not get the time`: the
+`include/secrets.h` — the name is **case-sensitive** and the board only sees
+2.4 GHz networks. The serial log says why: `WiFi status: network not found`
+means the exact name isn't visible (wrong spelling or capitalisation, 5 GHz
+only, or out of range), and the lines after it list any similar names the board
+*can* see, marking whether one is an exact match; `connect failed (wrong
+password?)` means the name was found but the password was refused. `Could not get the time`: the
 board is online but NTP is blocked. `Calendar feed unreachable`: check
 `BIN_FEED_URL`; the serial log shows the HTTP status. `Calendar feed
 unreadable` / `No bin dates in the feed`: the link works but isn't a bin
