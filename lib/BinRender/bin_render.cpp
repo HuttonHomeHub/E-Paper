@@ -223,3 +223,26 @@ void BinRender_Draw(const BinView *v)
     drawHero(n > 0 ? &groups[0] : NULL);
     drawList(groups + 1, n > 0 ? n - 1 : 0);
 }
+
+void BinRender_DrawMessage(const char *title, const char *detail)
+{
+    Paint_Clear(WHITE);
+
+    Paint_DrawRectangle(2, 2, SCREEN_W - 3, SCREEN_H - 3,
+                        BLACK, DOT_PIXEL_1X1, DRAW_FILL_EMPTY);
+
+    Paint_DrawString_EN(MARGIN, HEADER_TOP + 6, "Bin Collection", &Font24, BLACK, WHITE);
+    Paint_DrawLine(MARGIN, HEADER_RULE_Y, SCREEN_W - MARGIN, HEADER_RULE_Y,
+                   BLACK, DOT_PIXEL_2X2, LINE_STYLE_SOLID);
+
+    Paint_DrawRectangle(HERO_X, BODY_TOP, SCREEN_W - MARGIN, BODY_BOTTOM,
+                        BLACK, DOT_PIXEL_2X2, DRAW_FILL_EMPTY);
+
+    const int cx = SCREEN_W / 2;
+    Ui_DrawCentred(cx, BODY_TOP + 130, title, &Font24);
+
+    char fit[64];
+    Ui_FitText(fit, sizeof(fit), detail, &Font16, SCREEN_W - 2 * (MARGIN + 30));
+    Ui_DrawCentred(cx, BODY_TOP + 180, fit, &Font16);
+    Ui_DrawCentred(cx, BODY_TOP + 210, "RESET, then BOOT, to try again.", &Font12);
+}

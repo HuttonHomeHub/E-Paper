@@ -1,0 +1,10 @@
+{
+  "name": "BinFeed",
+  "version": "1.0.0",
+  "description": "Downloads the bin collection calendar feed over WiFi and parses it. Needs the Arduino ESP32 core.",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "dependencies": [
+    { "name": "CalendarCore" }
+  ]
+}

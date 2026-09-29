@@ -2,9 +2,9 @@
  * Calendar and Bin Collection screens for the Waveshare 7.5" e-Paper panel
  * (800x480 B/W).
  *
- * Both screens currently render placeholder data - the layouts are being built
- * first, and a live feed will replace DummyData_Fill() / DummyBinData_Fill()
- * once the designs are settled. There is no WiFi in this build.
+ * The Bin Collection page reads the council's calendar feed over WiFi when
+ * include/secrets.h is filled in (see secrets.example.h); without it, and for
+ * the Calendar page, placeholder data is shown.
  *
  * One screen is drawn per boot, then the panel is slept and the ESP32 enters
  * deep sleep. E-paper holds its image unpowered, so this costs almost nothing.
@@ -21,6 +21,7 @@
 #include "GUI_Paint.h"
 
 #include "bin_data.h"
+#include "bin_feed.h"
 #include "bin_render.h"
 #include "calendar_data.h"
 #include "calendar_render.h"
@@ -39,12 +40,31 @@ static const gpio_num_t BUTTON_PIN = GPIO_NUM_0;    /* BOOT button, active low *
 /* Survives deep sleep, so each button wake can step to the next page. */
 static RTC_DATA_ATTR int gPage = PAGE_CALENDAR;
 
+/* Draws the bin page from the live feed, or says why it can't. Runs before the
+ * panel is initialised, so the WiFi radio and the display never work together
+ * and the panel is not left powered while waiting on the network. */
+static void drawBins()
+{
+    BinView view;
+    if (!BinFeed_Configured()) {
+        DummyBinData_Fill(&view);
+        BinRender_Draw(&view);
+        return;
+    }
+    const char *error = "";
+    if (BinFeed_Load(&view, &error)) {
+        BinRender_Draw(&view);
+    } else {
+        Serial.print("Feed failed: ");
+        Serial.println(error);
+        BinRender_DrawMessage("Can't load bin dates", error);
+    }
+}
+
 static void drawPage(Page page)
 {
     if (page == PAGE_BINS) {
-        BinView view;
-        DummyBinData_Fill(&view);
-        BinRender_Draw(&view);
+        drawBins();
     } else {
         CalView view;
         DummyData_Fill(&view);
@@ -95,17 +115,18 @@ void setup()
         return;
     }
 
+    /* Draw first (this may fetch over WiFi), then bring the panel up. */
+    Serial.println("Drawing page...");
+    Paint_NewImage(frameBuffer, PANEL_WIDTH, PANEL_HEIGHT, ROTATE_0, WHITE);
+    Paint_SelectImage(frameBuffer);
+    drawPage((Page)gPage);
+
     Serial.println("Initialising panel...");
     EPD_7IN5_V2_Init();
 
     Serial.println("Clearing panel (this takes a few seconds)...");
     EPD_7IN5_V2_Clear();
     DEV_Delay_ms(500);
-
-    Serial.println("Drawing page...");
-    Paint_NewImage(frameBuffer, PANEL_WIDTH, PANEL_HEIGHT, ROTATE_0, WHITE);
-    Paint_SelectImage(frameBuffer);
-    drawPage((Page)gPage);
 
     Serial.println("Refreshing panel...");
     EPD_7IN5_V2_Display(frameBuffer);

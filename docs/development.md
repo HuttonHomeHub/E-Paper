@@ -5,10 +5,12 @@
 ```
 platformio.ini             envs: esp32 (firmware, default) and native (unit tests)
 src/                       main.cpp (page switching, panel I/O) + placeholder data
+include/                   secrets.example.h (copy to secrets.h, which is gitignored)
 lib/CalendarCore/          data models and date/bin-schedule logic (no hardware deps)
 lib/UiKit/                 text helpers shared by the screens (fit, centre, scaled text)
 lib/CalendarRender/        the calendar screen
 lib/BinRender/             the bin collection screen and its bin icons
+lib/BinFeed/               WiFi + NTP + HTTPS download of the bin calendar (Arduino only)
 lib/WaveshareEPD/          vendored Waveshare driver (locally modified, see its README)
 test/                      Unity tests: test_calendar_date, test_bin_schedule
 tools/                     host-side preview: preview.sh + stubs in tools/host/
@@ -25,9 +27,9 @@ its logic can be unit tested on a PC.
 The firmware shows one page per boot, then puts the panel and the ESP32 into
 deep sleep. **Press BOOT (GPIO0) to wake and show the next page; press RESET to
 start again from the calendar.** The current page is kept in RTC memory across
-deep sleep. Both pages currently render placeholder data (`src/dummy_data.cpp`);
-there is no WiFi or live feed yet. Swapping `DummyData_Fill()` /
-`DummyBinData_Fill()` for a real source is the only change the renderers need.
+deep sleep. The Bin Collection page reads the live calendar feed (see below);
+the Calendar page still shows placeholder data (`src/dummy_data.cpp`) until it
+gets a source of its own.
 
 The button wake has not yet been exercised on hardware.
 
@@ -67,9 +69,48 @@ in [`bin_icon.cpp`](../lib/BinRender/bin_icon.cpp).
 Data model: [`bin_data.h`](../lib/CalendarCore/bin_data.h), a flat list of
 (date, bin) entries in any order. `BinSchedule_Build()` sorts them, merges bins
 that share a day and drops past dates. It is the tested part; the renderer only
-lays out what it returns. The live source will read a shared Google Calendar
-(ICS link); bins are to be recognised by event title. That feed is not
-implemented yet.
+lays out what it returns.
+
+### Live bin data
+
+`lib/BinFeed` joins WiFi, sets the clock over NTP (UK time), downloads the
+council's ReCollect calendar (`.ics`) over HTTPS with certificate checking, and
+turns it into bin entries with `IcsBins_Parse()` (`lib/CalendarCore/ics_bins.*`,
+unit tested). The bin page is drawn *before* the panel is powered, so the radio
+and the display never run together. If anything fails, the page shows the
+reason ("Could not join WiFi", "Calendar feed unreachable", ...) instead of
+old or made-up dates.
+
+Set it up once:
+
+1. Copy `include/secrets.example.h` to `include/secrets.h` (gitignored).
+2. Fill in `WIFI_SSID`, `WIFI_PASSWORD` and `BIN_FEED_URL` (use `https://`; a
+   `webcal://` link works with the scheme changed). The link identifies your
+   property, so keep it out of the repo.
+3. Rebuild and flash. With no `secrets.h`, or an empty `WIFI_SSID`, the page
+   shows placeholder data and the build still works.
+
+The feed has one all-day event per collection day, and its title names *what*
+is collected, not a bin colour, so one event can mean several bins. The keyword
+table is `IcsBins_FromSummary()`:
+
+| Wording in the event title | Bin |
+| --- | --- |
+| `plastic`, or the word `blue` | Blue |
+| `refuse`, `rubbish`, or the word `black` | Black |
+| `paper`, or the word `red` | Red |
+| `food` | Food |
+| `garden` | Garden |
+
+For example "Food waste, plastic recycling (blue-lid bin...), and refuse
+(household rubbish)" is Blue + Black + Food. Refuse being the black bin is an
+assumption based on the wording; if a different feed words things differently,
+this is the one place to change. Events matching nothing are ignored.
+
+The feed is cached for 12 hours by its server and holds roughly the next five
+months. The page is fetched fresh each time it is shown (each BOOT wake); there
+is no timed refresh, so a page left showing overnight will still say
+"TOMORROW" the next day until it is redrawn.
 
 ## Commands
 

@@ -11,4 +11,8 @@
 
 void BinRender_Draw(const BinView *view);
 
+/* Shown instead of the schedule when the data could not be loaded, so a failure
+ * is visible rather than leaving stale or made-up dates on the panel. */
+void BinRender_DrawMessage(const char *title, const char *detail);
+
 #endif

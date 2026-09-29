@@ -42,6 +42,16 @@ A full `EPD_7IN5_V2_Clear()` before drawing (which the firmware does) removes mo
 of it. Panels that have sat displaying one image for a long time may need two or
 three clear cycles.
 
+**The Bin Collection page says "Can't load bin dates"** - the second line says
+why. `Could not join WiFi`: check `WIFI_SSID` / `WIFI_PASSWORD` in
+`include/secrets.h` (2.4 GHz networks only). `Could not get the time`: the
+board is online but NTP is blocked. `Calendar feed unreachable`: check
+`BIN_FEED_URL`; the serial log shows the HTTP status. `Calendar feed
+unreadable` / `No bin dates in the feed`: the link works but isn't a bin
+calendar, or its wording isn't recognised (see the keyword table in
+[development.md](development.md#live-bin-data)). To retry, press RESET, then
+BOOT to reach the bin page again.
+
 **Don't leave the panel powered and idle for hours.** It can damage the display.
 The firmware calls `EPD_7IN5_V2_Sleep()` when it's done drawing, which is exactly
 why — keep that habit in anything you build on top of this.

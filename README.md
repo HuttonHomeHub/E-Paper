@@ -7,7 +7,9 @@ Driver Board. It has two pages:
 * **Bin Collection** — which bins go out next (Blue, Black, Red, Food, Garden),
   with the following collection days listed beside it.
 
-Both currently show placeholder data; there is no WiFi or live feed yet.
+The Bin Collection page reads the council's calendar feed over WiFi once you
+add your details ([docs/development.md](docs/development.md#live-bin-data));
+until then, and for the Calendar page, placeholder data is shown.
 
 | | |
 | --- | --- |
@@ -24,7 +26,10 @@ start again from the calendar.**
 
 1. Install PlatformIO and the USB serial driver, and connect the panel:
    [docs/hardware-setup.md](docs/hardware-setup.md).
-2. Build, flash and watch the log:
+2. Optional, for live bin dates: copy `include/secrets.example.h` to
+   `include/secrets.h` and fill it in
+   ([details](docs/development.md#live-bin-data)).
+3. Build, flash and watch the log:
 
    ```
    pio run -t upload
@@ -36,7 +41,7 @@ No board yet? Preview the screen on your computer and run the tests:
 ```
 tools/preview.sh bins             # renders the exact screen the ESP32 draws
                                   # (or: calendar) to preview-<page>.png
-pio test -e native                # unit tests for the date and bin-schedule logic
+pio test -e native                # unit tests for the date, bin-schedule and feed-parsing logic
 ```
 
 ## Documentation
