@@ -8,8 +8,11 @@
  *
  * One screen is drawn per boot, then the panel is slept and the ESP32 enters
  * deep sleep. E-paper holds its image unpowered, so this costs almost nothing.
- * Press the BOOT button (GPIO0) to wake and show the next screen; press RESET
- * to start again from the calendar.
+ * Two things wake it:
+ *   - the BOOT button (GPIO0): show the next screen;
+ *   - a timer set for just after midnight: redraw the same screen, because the
+ *     pages show dates (never the time), so midnight is when they go stale.
+ * RESET starts again from the calendar.
  */
 
 #include <Arduino.h>
@@ -26,6 +29,7 @@
 #include "calendar_data.h"
 #include "calendar_render.h"
 #include "dummy_data.h"
+#include "uk_clock.h"
 
 typedef enum { PAGE_CALENDAR = 0, PAGE_BINS, PAGE_COUNT } Page;
 
@@ -72,9 +76,10 @@ static void drawPage(Page page)
     }
 }
 
-/* Deep sleep with the BOOT button as the wake source. Waits for the button to
- * be released first, otherwise a still-held press would wake us straight away. */
-static void sleepUntilButton()
+/* Deep sleep until the BOOT button is pressed, or - if the clock is known - just
+ * after the next midnight. Waits for the button to be released first, otherwise
+ * a still-held press would wake us straight away. */
+static void sleepUntilWake()
 {
     pinMode(BUTTON_PIN, INPUT_PULLUP);
     const unsigned long start = millis();
@@ -85,6 +90,16 @@ static void sleepUntilButton()
     esp_sleep_enable_ext0_wakeup(BUTTON_PIN, 0);
     rtc_gpio_pullup_en(BUTTON_PIN);
     rtc_gpio_pulldown_dis(BUTTON_PIN);
+
+    const long untilRefresh = UkClock_SecondsUntilRefresh();
+    if (untilRefresh > 0) {
+        esp_sleep_enable_timer_wakeup((uint64_t)untilRefresh * 1000000ULL);
+        Serial.print("Automatic refresh in ");
+        Serial.print(untilRefresh / 60);
+        Serial.println(" min (just after midnight).");
+    } else {
+        Serial.println("Clock not set - no automatic refresh until the bin page has been shown.");
+    }
 
     Serial.println("Deep sleep. Press BOOT for the next page, RESET to start over.");
     Serial.flush();
@@ -97,10 +112,18 @@ void setup()
     delay(200);
     Serial.println();
 
-    if (esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0) {
-        gPage = (gPage + 1) % PAGE_COUNT;
-    } else {
-        gPage = PAGE_CALENDAR;
+    UkClock_ApplyTimezone();    /* the setting is lost in deep sleep */
+
+    switch (esp_sleep_get_wakeup_cause()) {
+        case ESP_SLEEP_WAKEUP_EXT0:                 /* BOOT pressed: next page */
+            gPage = (gPage + 1) % PAGE_COUNT;
+            break;
+        case ESP_SLEEP_WAKEUP_TIMER:                /* midnight: same page, new date */
+            Serial.println("Scheduled midnight refresh.");
+            break;
+        default:                                    /* power-up or RESET */
+            gPage = PAGE_CALENDAR;
+            break;
     }
     Serial.print("e-Paper display - page: ");
     Serial.println(kPageNames[gPage]);
@@ -138,7 +161,7 @@ void setup()
     free(frameBuffer);
     DEV_Module_Exit();
 
-    sleepUntilButton();
+    sleepUntilWake();
 }
 
 void loop()

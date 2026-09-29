@@ -29,12 +29,11 @@ void DummyData_Fill(CalView *view)
     view->todayYear  = DUMMY_YEAR;
     view->todayMonth = DUMMY_MONTH;
     view->todayDay   = DUMMY_DAY;
-    view->nowMin     = 14 * 60 + 32;
 
     view->events     = kEvents;
     view->eventCount = (int)(sizeof(kEvents) / sizeof(kEvents[0]));
 
-    view->statusLine = "Updated 14:32 - placeholder data";
+    view->statusLine = "Sample data";
 }
 
 /* A plausible fortnightly rota, collected on Tuesdays: food every week, black
@@ -58,5 +57,5 @@ void DummyBinData_Fill(BinView *view)
     view->collections     = kBins;
     view->collectionCount = (int)(sizeof(kBins) / sizeof(kBins[0]));
 
-    view->statusLine = "Updated 14:32 - placeholder data";
+    view->warning = "SAMPLE DATA - not your real dates";
 }

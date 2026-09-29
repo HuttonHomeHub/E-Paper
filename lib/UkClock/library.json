@@ -1,0 +1,10 @@
+{
+  "name": "UkClock",
+  "version": "1.0.0",
+  "description": "UK local time, NTP sync and the daily refresh countdown. Needs the Arduino ESP32 core.",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "dependencies": [
+    { "name": "CalendarCore" }
+  ]
+}

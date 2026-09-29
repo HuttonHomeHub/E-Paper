@@ -42,7 +42,22 @@ A full `EPD_7IN5_V2_Clear()` before drawing (which the firmware does) removes mo
 of it. Panels that have sat displaying one image for a long time may need two or
 three clear cycles.
 
-**The Bin Collection page says "Can't load bin dates"** - the second line says
+**A black "OUT OF DATE - last updated ..." banner on the bin page** — the board
+couldn't download the calendar (after two tries) and is showing the last good
+copy it saved, so the dates may be wrong or missing recent changes. Check the
+WiFi and the serial log (`Feed failed: ...` gives the reason); the page fixes
+itself at the next successful refresh (a BOOT wake onto the page, or midnight).
+
+**A black "SAMPLE DATA" banner** — WiFi details aren't set in `include/secrets.h`
+(or the file is missing), so the page is showing made-up dates.
+
+**The page didn't refresh at midnight** — the timer is only set once the clock
+is known. After a power-up or RESET, show the bin page once (press BOOT); the
+log then says `Automatic refresh in N min`. If it says `Clock not set`, the
+NTP sync failed.
+
+**The Bin Collection page says "Can't load bin dates"** — nothing usable was
+available (no saved copy yet, or the date is unknown). The second line says
 why. `Could not join WiFi`: check `WIFI_SSID` / `WIFI_PASSWORD` in
 `include/secrets.h` (2.4 GHz networks only). `Could not get the time`: the
 board is online but NTP is blocked. `Calendar feed unreachable`: check

@@ -47,8 +47,15 @@ static void drawHeader(const BinView *v)
              Cal_WeekdayName(dow), v->todayDay, Cal_MonthName(v->todayMonth));
     Ui_DrawRight(SCREEN_W - MARGIN, HEADER_TOP + 4, buf, &Font16);
 
-    if (v->statusLine && v->statusLine[0]) {
-        Ui_DrawRight(SCREEN_W - MARGIN, HEADER_TOP + 26, v->statusLine, &Font12);
+    /* A solid banner under the title, so untrustworthy data is impossible to miss. */
+    if (v->warning && v->warning[0]) {
+        char fit[64];
+        Ui_FitText(fit, sizeof(fit), v->warning, &Font16, SCREEN_W - 2 * MARGIN - 20);
+        const int bannerY = HEADER_TOP + 38;
+        Paint_DrawRectangle(MARGIN, (UWORD)bannerY,
+                            (UWORD)(MARGIN + Ui_TextWidth(fit, &Font16) + 20), (UWORD)(bannerY + 23),
+                            BLACK, DOT_PIXEL_1X1, DRAW_FILL_FULL);
+        Paint_DrawString_EN(MARGIN + 10, (UWORD)(bannerY + 4), fit, &Font16, WHITE, BLACK);
     }
 
     Paint_DrawLine(MARGIN, HEADER_RULE_Y, SCREEN_W - MARGIN, HEADER_RULE_Y,

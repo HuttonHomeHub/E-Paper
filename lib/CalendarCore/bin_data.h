@@ -34,7 +34,10 @@ typedef struct {
     const BinCollection *collections;   /* any order; past dates are ignored */
     int      collectionCount;
 
-    const char *statusLine; /* small text in the header, e.g. "Updated 14:32" */
+    /* Shown as a prominent banner in the header when the data can't be fully
+     * trusted ("SAMPLE DATA", "OUT OF DATE - last updated Tue 27 Sep"); NULL
+     * when it is fine. Pages show dates, never the time of day. */
+    const char *warning;
 } BinView;
 
 #endif

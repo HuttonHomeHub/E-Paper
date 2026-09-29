@@ -42,6 +42,10 @@ void Bin_HeroLabel(int daysAway, int dowMon0, char *buf, size_t len);
  * or "Not this week" from a week out. */
 void Bin_Advice(int daysAway, char *buf, size_t len);
 
+/* Banner text for data that could not be refreshed, given the date it was last
+ * good: "OUT OF DATE - last updated Tue 27 Sep". */
+void Bin_StaleWarning(char *buf, size_t len, int year, int month, int day);
+
 /* Compact countdown for the list: "Today", "Tomorrow", "In 8 days". */
 void Bin_DaysAwayText(int daysAway, char *buf, size_t len);
 

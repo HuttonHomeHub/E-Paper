@@ -20,7 +20,10 @@ until then, and for the Calendar page, placeholder data is shown.
 
 One page is drawn per boot, then the board goes into deep sleep (e-paper holds
 its image with no power). **Press BOOT to show the next page; press RESET to
-start again from the calendar.**
+start again from the calendar.** The board also wakes just after midnight to
+redraw, so the dates roll over on their own. Pages show dates, never the time.
+If the bin dates can't be refreshed, the last saved copy is shown under a clear
+"OUT OF DATE" banner.
 
 ## Quick start
 
@@ -41,14 +44,14 @@ No board yet? Preview the screen on your computer and run the tests:
 ```
 tools/preview.sh bins             # renders the exact screen the ESP32 draws
                                   # (or: calendar) to preview-<page>.png
-pio test -e native                # unit tests for the date, bin-schedule and feed-parsing logic
+pio test -e native                # unit tests for the date, bin-schedule, feed-parsing and refresh logic
 ```
 
 ## Documentation
 
 * [docs/hardware-setup.md](docs/hardware-setup.md) — install, wiring, pin mapping, first flash
 * [docs/troubleshooting.md](docs/troubleshooting.md) — blank screen, BUSY timeouts, upload failures
-* [docs/development.md](docs/development.md) — code layout, data model, testing, drawing API
+* [docs/development.md](docs/development.md) — code layout, data model, testing, CI and versions, drawing API
 
 ## Credits
 

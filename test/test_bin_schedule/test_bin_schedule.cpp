@@ -13,7 +13,7 @@ static BinView viewOf(const BinCollection *c, int n)
     v.todayYear = 2026; v.todayMonth = 8; v.todayDay = 24;   /* a Monday */
     v.collections = c;
     v.collectionCount = n;
-    v.statusLine = "";
+    v.warning = NULL;
     return v;
 }
 
@@ -111,6 +111,9 @@ static void test_labels(void)
     Bin_Advice(5, b, sizeof b);       TEST_ASSERT_EQUAL_STRING("In 5 days", b);
     Bin_Advice(9, b, sizeof b);       TEST_ASSERT_EQUAL_STRING("Not this week", b);
     Bin_DaysAwayText(8, b, sizeof b); TEST_ASSERT_EQUAL_STRING("In 8 days", b);
+    char warn[64];
+    Bin_StaleWarning(warn, sizeof warn, 2026, 9, 27);
+    TEST_ASSERT_EQUAL_STRING("OUT OF DATE - last updated Sun 27 Sep", warn);
     TEST_ASSERT_EQUAL_STRING("Glass & cans", Bin_Contents(BIN_BLUE));
     TEST_ASSERT_EQUAL_STRING("General", Bin_Contents(BIN_BLACK));
     TEST_ASSERT_EQUAL_STRING("Cardboard", Bin_Contents(BIN_RED));

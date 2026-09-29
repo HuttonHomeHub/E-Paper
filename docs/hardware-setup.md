@@ -140,11 +140,12 @@ involved. Once uploaded, the serial monitor (115200 baud) shows:
 ```
 e-Paper display - page: Calendar
 BUSY line (GPIO25) before init reads: HIGH - panel present and idle
+Drawing page...
 Initialising panel...
 Clearing panel (this takes a few seconds)...
-Drawing page...
 Refreshing panel...
 Sleeping panel.
+Clock not set - no automatic refresh until the bin page has been shown.
 Deep sleep. Press BOOT for the next page, RESET to start over.
 ```
 
@@ -155,7 +156,8 @@ times on the way; that is its normal refresh cycle, not a fault.
 
 The Bin Collection page needs your WiFi details first (a 2.4 GHz network); see
 [Live bin data](development.md#live-bin-data). Without them it shows placeholder
-data.
+data under a "SAMPLE DATA" banner. Once the bin page has been shown, the log also
+says `Automatic refresh in N min (just after midnight).` before it sleeps.
 
 If the log stops early or the screen stays blank, see
 [troubleshooting.md](troubleshooting.md).

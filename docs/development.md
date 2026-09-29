@@ -10,35 +10,52 @@ lib/CalendarCore/          data models and date/bin-schedule logic (no hardware 
 lib/UiKit/                 text helpers shared by the screens (fit, centre, scaled text)
 lib/CalendarRender/        the calendar screen
 lib/BinRender/             the bin collection screen and its bin icons
-lib/BinFeed/               WiFi + NTP + HTTPS download of the bin calendar (Arduino only)
+lib/BinFeed/               WiFi + HTTPS download of the bin calendar, flash cache (Arduino only)
+lib/UkClock/               UK time, NTP sync, countdown to the midnight refresh (Arduino only)
 lib/WaveshareEPD/          vendored Waveshare driver (locally modified, see its README)
-test/                      Unity tests: test_calendar_date, test_bin_schedule, test_ics_bins
+test/                      Unity tests: date maths, bin schedule, ICS parsing, refresh + cache
+.github/workflows/ci.yml   tests + builds on every push; monthly check against the latest platform
 tools/                     host-side preview: preview.sh + stubs in tools/host/
 docs/                      hardware setup, troubleshooting, this file
 ```
 
 Dependencies point one way: `src/main.cpp` → `CalendarRender` / `BinRender` →
 `UiKit` → `WaveshareEPD`, with everything that decides *what* to show in
-`CalendarCore`. `CalendarCore` knows nothing about the display, which is why
+`CalendarCore` (and `BinFeed` / `UkClock` doing the network and clock work). `CalendarCore` knows nothing about the display, which is why
 its logic can be unit tested on a PC.
 
 ## Pages
 
 The firmware shows one page per boot, then puts the panel and the ESP32 into
-deep sleep. **Press BOOT (GPIO0) to wake and show the next page; press RESET to
-start again from the calendar.** The current page is kept in RTC memory across
-deep sleep. The Bin Collection page reads the live calendar feed (see below);
-the Calendar page still shows placeholder data (`src/dummy_data.cpp`) until it
-gets a source of its own.
+deep sleep. Two things wake it:
 
-Not yet exercised on hardware: the BOOT wake, and the WiFi / NTP / HTTPS
-fetch. Both are compile-checked only.
+* **BOOT (GPIO0)** shows the next page. **RESET** starts again from the
+  calendar. The current page is kept in RTC memory across deep sleep.
+* **A timer set for 00:05 local time** redraws the *same* page, so "TOMORROW"
+  becomes "TODAY" without anyone touching it. It is only set once the clock is
+  known, which happens the first time the bin page is shown after a power-up or
+  RESET (the serial log says "Clock not set..." until then). The 5 minutes past
+  midnight leaves room for the sleep timer, which is not a precision clock, to
+  wake slightly early. The timing logic is `lib/CalendarCore/refresh_schedule.*`.
+
+**Design rule: pages show dates, never the time of day.** A page is only redrawn
+at midnight (or on a button press), so any clock on it would be wrong within
+minutes. Keep it that way; event times in the calendar agenda are fine, they are
+data, not "now".
+
+The Bin Collection page reads the live calendar feed (see below); the Calendar
+page still shows placeholder data (`src/dummy_data.cpp`) until it gets a source
+of its own.
+
+Not yet exercised on hardware: the BOOT wake, the midnight timer wake, and the
+WiFi / NTP / HTTPS fetch. All are compile-checked only.
 
 ### Calendar
 
 A month grid with an agenda column:
 
-* **Header** — current month and year, today's full date, and a status line.
+* **Header** — current month and year, today's full date, and a small status
+  note ("Sample data" for now).
 * **Month grid** — Monday-first, today's date knocked out white on a black
   block, and up to three dots under any day that has events. Days either side
   of the month are drawn smaller so they recede.
@@ -60,6 +77,10 @@ it:
   and one icon per bin being collected. Icons grow when fewer bins are due.
 * **Following** — each later collection day with its countdown, the bin names,
   and mini icons.
+* **Warning banner** — a solid black strip under the title, shown only when the
+  data can't be fully trusted: `SAMPLE DATA - not your real dates` (no WiFi
+  details configured) or `OUT OF DATE - last updated Tue 27 Sep` (a refresh
+  failed and the last saved copy is being shown). Normal pages have no banner.
 
 The panel has no colour, so each bin is an icon plus its name, and the hero
 panel captions each with what goes in it. The bins share a wheelie-bin
@@ -88,9 +109,16 @@ lays out what it returns.
 council's ReCollect calendar (`.ics`) over HTTPS with certificate checking, and
 turns it into bin entries with `IcsBins_Parse()` (`lib/CalendarCore/ics_bins.*`,
 unit tested). The bin page is drawn *before* the panel is powered, so the radio
-and the display never run together. If anything fails, the page shows the
-reason ("Could not join WiFi", "Calendar feed unreachable", ...) instead of
-old or made-up dates.
+and the display never run together.
+
+If a download fails it is retried once. If it still fails, the page shows the
+**last good copy**, which every successful download saves to flash
+(`bin_cache.*` packs each entry into 32 bits), under the `OUT OF DATE` banner.
+Only when there is no saved copy, or the date is unknown, does the page show a
+plain error with the reason ("Could not join WiFi", "Calendar feed
+unreachable", ...) rather than made-up dates. Today's date comes from the clock,
+which keeps running through deep sleep, so a failed refresh still shows correct
+"TODAY / TOMORROW" labels.
 
 Set it up once:
 
@@ -125,9 +153,8 @@ On the bin page the serial log also shows the fetch (`Feed: joining WiFi...`,
 which is the first place to look if the page shows an error.
 
 The feed is cached for 12 hours by its server and holds roughly the next five
-months. The page is fetched fresh each time it is shown (each BOOT wake); there
-is no timed refresh, so a page left showing overnight will still say
-"TOMORROW" the next day until it is redrawn.
+months. It is downloaded fresh every time the bin page is drawn: on each BOOT
+wake onto it, and at the midnight refresh.
 
 ## Commands
 
@@ -148,7 +175,8 @@ add it to the compile line in `preview.sh`.
 
 New tests go in `test/test_<name>/` and only cover code that builds without the
 Arduino framework (the `native` env ignores `CalendarRender`, `BinRender`,
-`BinFeed`, `UiKit` and `WaveshareEPD`), so keep decision logic in `CalendarCore`.
+`BinFeed`, `UkClock`, `UiKit` and `WaveshareEPD`), so keep decision logic in
+`CalendarCore`.
 
 ### Adding a page
 
@@ -158,6 +186,26 @@ Arduino framework (the `native` env ignores `CalendarRender`, `BinRender`,
 2. Add it to `lib/*` in `tools/preview.sh`, and a case in `tools/host/host_render.cpp`.
 3. Add a `Page` value, a name and a `drawPage()` case in `src/main.cpp`.
 4. Add the library to `lib_ignore` under `[env:native]` in `platformio.ini`.
+
+## Continuous integration and versions
+
+`.github/workflows/ci.yml` runs on every push and pull request: the unit tests,
+a firmware build with no `secrets.h` (placeholder data), and a firmware build
+with the live-feed path compiled in (it fails if the HTTP client isn't linked,
+which guards the `-Iinclude` setting). The same commands work locally, so a
+green local run predicts a green CI run.
+
+`platformio.ini` **pins** the ESP32 and native platform versions, so a new
+release can't change the build unannounced. GitHub's dependency bot doesn't
+cover PlatformIO, so CI checks instead: a monthly job (also runnable by hand
+from the Actions tab) removes the pins and builds against the newest platform.
+
+* **Green:** the newest platform works; upgrade whenever you like by changing
+  the two versions in `platformio.ini` (`pio pkg outdated` shows what is newer).
+* **Red:** a newer release breaks the build. Stay on the pin and look into it
+  before upgrading.
+* In between, upgrade when you need a fix or feature from a release, or roughly
+  once a quarter.
 
 ## Drawing with GUI_Paint
 

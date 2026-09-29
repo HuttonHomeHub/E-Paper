@@ -30,12 +30,11 @@ typedef struct {
     int      todayYear;
     int      todayMonth;    /* 1-12 */
     int      todayDay;      /* 1-31 */
-    int      nowMin;        /* current time, minutes from midnight, -1 to hide */
 
     const CalEvent *events; /* sorted ascending by date then time */
     int      eventCount;
 
-    const char *statusLine; /* small text in the header, e.g. "Updated 14:32" */
+    const char *statusLine; /* small text in the header, e.g. "Sample data" */
 } CalView;
 
 #endif

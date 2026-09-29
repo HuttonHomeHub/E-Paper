@@ -99,6 +99,13 @@ void Bin_Advice(int daysAway, char *buf, size_t len)
     else                    snprintf(buf, len, "In %d days", daysAway);
 }
 
+void Bin_StaleWarning(char *buf, size_t len, int year, int month, int day)
+{
+    const int dow = Cal_DayOfWeekMon0(year, month, day);
+    snprintf(buf, len, "OUT OF DATE - last updated %.3s %d %.3s",
+             Cal_WeekdayName(dow), day, Cal_MonthName(month));
+}
+
 void Bin_DaysAwayText(int daysAway, char *buf, size_t len)
 {
     if (daysAway <= 0)      snprintf(buf, len, "Today");
