@@ -53,6 +53,11 @@ pio test -e native                # unit tests for the date, bin-schedule, feed-
 * [docs/troubleshooting.md](docs/troubleshooting.md) — blank screen, BUSY timeouts, upload failures
 * [docs/development.md](docs/development.md) — code layout, data model, testing, CI and versions, drawing API
 
+## License
+
+[MIT](LICENSE). The vendored driver in `lib/WaveshareEPD/` is Waveshare's, also
+MIT-licensed, and keeps its own copyright notices.
+
 ## Credits
 
 Driver code is Waveshare's, from <https://github.com/waveshareteam/e-Paper>,
