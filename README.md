@@ -1,9 +1,13 @@
-# E-Paper calendar — Waveshare 7.5" (800×480) on an ESP32 driver board
+# E-Paper display — Waveshare 7.5" (800×480) on an ESP32 driver board
 
-Firmware that draws a calendar (month grid plus an agenda of upcoming events)
-on a Waveshare 7.5" e-Paper panel, driven by a Waveshare e-Paper ESP32 Driver
-Board. It currently shows placeholder data; there is no WiFi or live calendar
-feed yet.
+Firmware for a Waveshare 7.5" e-Paper panel, driven by a Waveshare e-Paper ESP32
+Driver Board. It has two pages:
+
+* **Calendar** — a month grid with an agenda of upcoming events.
+* **Bin Collection** — which bins go out next (Blue, Black, Red, Food, Garden),
+  with the following collection days listed beside it.
+
+Both currently show placeholder data; there is no WiFi or live feed yet.
 
 | | |
 | --- | --- |
@@ -12,8 +16,9 @@ feed yet.
 | **Driver** | `EPD_7in5_V2`, vendored from Waveshare into [`lib/WaveshareEPD/`](lib/WaveshareEPD/) |
 | **Framework** | Arduino, via PlatformIO |
 
-The screen is drawn once at boot and the panel is then put to sleep. E-paper
-holds its image with no power, so **press RESET on the board to redraw.**
+One page is drawn per boot, then the board goes into deep sleep (e-paper holds
+its image with no power). **Press BOOT to show the next page; press RESET to
+start again from the calendar.**
 
 ## Quick start
 
@@ -29,8 +34,9 @@ holds its image with no power, so **press RESET on the board to redraw.**
 No board yet? Preview the screen on your computer and run the tests:
 
 ```
-tools/preview.sh calendar.png     # renders the exact screen the ESP32 draws
-pio test -e native                # unit tests for the date arithmetic
+tools/preview.sh bins             # renders the exact screen the ESP32 draws
+                                  # (or: calendar) to preview-<page>.png
+pio test -e native                # unit tests for the date and bin-schedule logic
 ```
 
 ## Documentation

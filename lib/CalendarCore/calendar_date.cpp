@@ -46,3 +46,26 @@ int Cal_DayOfWeekMon0(int year, int month, int day)
     if (dow < 0) dow += 7;
     return dow;
 }
+
+const char *Cal_MonthName(int month)
+{
+    static const char *const names[] = {
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
+    };
+    return (month >= 1 && month <= 12) ? names[month - 1] : "";
+}
+
+const char *Cal_WeekdayName(int dow)
+{
+    static const char *const names[] = {
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    };
+    return (dow >= 0 && dow <= 6) ? names[dow] : "";
+}
+
+const char *Cal_WeekdayShortName(int dow)
+{
+    static const char *const names[] = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
+    return (dow >= 0 && dow <= 6) ? names[dow] : "";
+}

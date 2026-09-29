@@ -1,7 +1,6 @@
 #include "calendar_render.h"
 #include "calendar_date.h"
-#include "GUI_Paint.h"
-#include "fonts.h"
+#include "ui_text.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -34,67 +33,22 @@
 #define AGENDA_ROW_H    36
 #define AGENDA_DAY_H    26
 
-static const char *kMonthNames[] = {
-    "January", "February", "March", "April", "May", "June",
-    "July", "August", "September", "October", "November", "December"
-};
-static const char *kWeekdayShort[] = { "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN" };
-static const char *kWeekdayLong[]  = { "Monday", "Tuesday", "Wednesday", "Thursday",
-                                       "Friday", "Saturday", "Sunday" };
-
-/* ------------------------------------------------------------ text utils -- */
-
-/* Copies src into dst, truncating with "..." so it fits maxPx at this font. */
-static void fitText(char *dst, size_t dstLen, const char *src, sFONT *font, int maxPx)
-{
-    const int maxChars = maxPx / font->Width;
-    const int srcLen   = (int)strlen(src);
-
-    if (maxChars <= 0) { dst[0] = '\0'; return; }
-
-    if (srcLen <= maxChars) {
-        snprintf(dst, dstLen, "%s", src);
-        return;
-    }
-    int keep = maxChars - 3;
-    if (keep < 1) keep = maxChars;          /* too narrow for an ellipsis */
-    if (keep > (int)dstLen - 4) keep = (int)dstLen - 4;
-    memcpy(dst, src, (size_t)keep);
-    dst[keep] = '\0';
-    if (keep == maxChars - 3) strncat(dst, "...", dstLen - strlen(dst) - 1);
-}
-
-static int textWidth(const char *s, sFONT *font)
-{
-    return (int)strlen(s) * font->Width;
-}
-
-static void drawRight(int rightX, int y, const char *s, sFONT *font)
-{
-    Paint_DrawString_EN((UWORD)(rightX - textWidth(s, font)), (UWORD)y, s, font, BLACK, WHITE);
-}
-
-static void drawCentred(int cx, int y, const char *s, sFONT *font, UWORD fg, UWORD bg)
-{
-    Paint_DrawString_EN((UWORD)(cx - textWidth(s, font) / 2), (UWORD)y, s, font, fg, bg);
-}
-
 /* ---------------------------------------------------------------- header -- */
 
 static void drawHeader(const CalView *v)
 {
     char buf[64];
 
-    snprintf(buf, sizeof(buf), "%s %d", kMonthNames[v->todayMonth - 1], v->todayYear);
+    snprintf(buf, sizeof(buf), "%s %d", Cal_MonthName(v->todayMonth), v->todayYear);
     Paint_DrawString_EN(MARGIN, HEADER_TOP + 6, buf, &Font24, BLACK, WHITE);
 
     const int dow = Cal_DayOfWeekMon0(v->todayYear, v->todayMonth, v->todayDay);
     snprintf(buf, sizeof(buf), "%s %d %s",
-             kWeekdayLong[dow], v->todayDay, kMonthNames[v->todayMonth - 1]);
-    drawRight(SCREEN_W - MARGIN, HEADER_TOP + 4, buf, &Font16);
+             Cal_WeekdayName(dow), v->todayDay, Cal_MonthName(v->todayMonth));
+    Ui_DrawRight(SCREEN_W - MARGIN, HEADER_TOP + 4, buf, &Font16);
 
     if (v->statusLine && v->statusLine[0]) {
-        drawRight(SCREEN_W - MARGIN, HEADER_TOP + 26, v->statusLine, &Font12);
+        Ui_DrawRight(SCREEN_W - MARGIN, HEADER_TOP + 26, v->statusLine, &Font12);
     }
 
     Paint_DrawLine(MARGIN, HEADER_RULE_Y, SCREEN_W - MARGIN, HEADER_RULE_Y,
@@ -118,7 +72,7 @@ static void drawMonthGrid(const CalView *v)
     /* Weekday headings */
     for (int c = 0; c < GRID_COLS; c++) {
         const int cx = GRID_X + c * GRID_COL_W + GRID_COL_W / 2;
-        drawCentred(cx, BODY_TOP + 4, kWeekdayShort[c], &Font12, BLACK, WHITE);
+        Ui_DrawCentred(cx, BODY_TOP + 4, Cal_WeekdayShortName(c), &Font12, BLACK, WHITE);
     }
     Paint_DrawLine(GRID_X, GRID_BODY_TOP - 4, GRID_X + GRID_W, GRID_BODY_TOP - 4,
                    BLACK, DOT_PIXEL_1X1, LINE_STYLE_SOLID);
@@ -142,12 +96,12 @@ static void drawMonthGrid(const CalView *v)
         if (dayNum < 1) {
             /* Trailing days of the previous month, set smaller so they recede. */
             snprintf(label, sizeof(label), "%d", daysPrev + dayNum);
-            drawCentred(x + GRID_COL_W / 2, y + 14, label, &Font12, BLACK, WHITE);
+            Ui_DrawCentred(x + GRID_COL_W / 2, y + 14, label, &Font12, BLACK, WHITE);
             continue;
         }
         if (dayNum > daysThis) {
             snprintf(label, sizeof(label), "%d", dayNum - daysThis);
-            drawCentred(x + GRID_COL_W / 2, y + 14, label, &Font12, BLACK, WHITE);
+            Ui_DrawCentred(x + GRID_COL_W / 2, y + 14, label, &Font12, BLACK, WHITE);
             continue;
         }
 
@@ -159,9 +113,9 @@ static void drawMonthGrid(const CalView *v)
             Paint_DrawRectangle((UWORD)(x + 8), (UWORD)(y + 2),
                                 (UWORD)(x + GRID_COL_W - 8), (UWORD)(y + 30),
                                 BLACK, DOT_PIXEL_1X1, DRAW_FILL_FULL);
-            drawCentred(x + GRID_COL_W / 2, y + 5, label, &Font20, WHITE, BLACK);
+            Ui_DrawCentred(x + GRID_COL_W / 2, y + 5, label, &Font20, WHITE, BLACK);
         } else {
-            drawCentred(x + GRID_COL_W / 2, y + 5, label, &Font20, BLACK, WHITE);
+            Ui_DrawCentred(x + GRID_COL_W / 2, y + 5, label, &Font20, BLACK, WHITE);
         }
 
         /* A dot per event, up to three, so busy days read at a glance. */
@@ -206,9 +160,9 @@ static void dayLabel(const CalView *v, long serial, char *buf, size_t len)
 
     const int dow = Cal_DayOfWeekMon0(yy, mm, dd);
     char month[4];
-    memcpy(month, kMonthNames[mm - 1], 3);
+    memcpy(month, Cal_MonthName(mm), 3);
     month[3] = '\0';
-    snprintf(buf, len, "%s %d %s", kWeekdayShort[dow], dd, month);
+    snprintf(buf, len, "%s %d %s", Cal_WeekdayShortName(dow), dd, month);
 }
 
 static void drawAgenda(const CalView *v)
@@ -253,7 +207,7 @@ static void drawAgenda(const CalView *v)
         Paint_DrawString_EN(AGENDA_X, y, buf, &Font12, BLACK, WHITE);
 
         char title[CAL_TITLE_LEN];
-        fitText(title, sizeof(title), e->title, &Font16, AGENDA_W);
+        Ui_FitText(title, sizeof(title), e->title, &Font16, AGENDA_W);
         Paint_DrawString_EN(AGENDA_X, y + 14, title, &Font16, BLACK, WHITE);
 
         y += AGENDA_ROW_H;

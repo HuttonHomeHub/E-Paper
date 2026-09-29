@@ -12,4 +12,9 @@ int  Cal_DayOfWeekMon0(int year, int month, int day);  /* 0=Mon .. 6=Sun */
 long Cal_DaysFromCivil(int year, int month, int day);  /* serial day, 1970-01-01 == 0 */
 void Cal_CivilFromDays(long serial, int *year, int *month, int *day);
 
+/* English names. month is 1-12, dow is 0=Mon .. 6=Sun; out of range gives "". */
+const char *Cal_MonthName(int month);
+const char *Cal_WeekdayName(int dow);         /* "Monday" */
+const char *Cal_WeekdayShortName(int dow);    /* "MON"    */
+
 #endif

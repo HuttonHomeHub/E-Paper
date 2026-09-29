@@ -27,7 +27,7 @@ getting no electrical response from it. In order:
 The `BUSY line (GPIO25) before init reads:` line in the log narrows this down:
 `LOW` before any command is sent means the fault is physical, not in the code.
 
-**The serial log runs all the way through to `Done.` but the screen stays blank**
+**The serial log runs all the way through to `Deep sleep.` but the screen stays blank**
 — same physical checks as above, starting with the ribbon cable.
 
 **The image appears but is scrambled, doubled or shifted** — first flip the

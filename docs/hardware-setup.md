@@ -138,14 +138,14 @@ Build first on its own: it proves the toolchain works before the hardware is
 involved. Once uploaded, the serial monitor (115200 baud) shows:
 
 ```
-e-Paper calendar - placeholder data
+e-Paper display - page: Calendar
 BUSY line (GPIO25) before init reads: HIGH - panel present and idle
 Initialising panel...
 Clearing panel (this takes a few seconds)...
-Drawing calendar...
+Drawing page...
 Refreshing panel...
 Sleeping panel.
-Done. Press RESET on the board to draw it again.
+Deep sleep. Press BOOT for the next page, RESET to start over.
 ```
 
 **The panel is slow, and that's normal.** A full refresh of a 7.5" e-paper takes

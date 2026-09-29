@@ -6,8 +6,10 @@
 #ifndef DUMMY_DATA_H
 #define DUMMY_DATA_H
 
+#include "bin_data.h"
 #include "calendar_data.h"
 
 void DummyData_Fill(CalView *view);
+void DummyBinData_Fill(BinView *view);
 
 #endif

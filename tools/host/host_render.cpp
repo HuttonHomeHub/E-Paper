@@ -1,11 +1,12 @@
 /**
- * Host-side render harness. Builds the same calendar screen the ESP32 draws,
+ * Host-side render harness. Builds the same screens the ESP32 draws,
  * using the real GUI_Paint code and the real renderer, and writes it out as a
  * PNG. Lets the layout be reviewed without flashing hardware.
  *
  * Build and run with tools/preview.sh
  */
 #include "GUI_Paint.h"
+#include "bin_render.h"
 #include "calendar_render.h"
 #include "dummy_data.h"
 
@@ -38,15 +39,25 @@ static void writeChunk(FILE *f, const char *type, const unsigned char *data, uns
 
 int main(int argc, char **argv)
 {
-    const char *out = (argc > 1) ? argv[1] : "calendar.png";
+    const char *page = (argc > 1) ? argv[1] : "calendar";
+    const char *out  = (argc > 2) ? argv[2] : "preview.png";
 
     UBYTE *buf = (UBYTE *)malloc((size_t)(W / 8) * H);
     Paint_NewImage(buf, W, H, ROTATE_0, WHITE);
     Paint_SelectImage(buf);
 
-    CalView view;
-    DummyData_Fill(&view);
-    CalendarRender_Draw(&view);
+    if (strcmp(page, "calendar") == 0) {
+        CalView view;
+        DummyData_Fill(&view);
+        CalendarRender_Draw(&view);
+    } else if (strcmp(page, "bins") == 0) {
+        BinView view;
+        DummyBinData_Fill(&view);
+        BinRender_Draw(&view);
+    } else {
+        fprintf(stderr, "unknown page '%s' (expected calendar or bins)\n", page);
+        return 1;
+    }
 
     /* Paint_Clear(WHITE) fills 0xFF, so bit 1 is white and bit 0 is black ink. */
     unsigned char *raw = (unsigned char *)malloc((size_t)(W + 1) * H);

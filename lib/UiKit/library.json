@@ -1,0 +1,10 @@
+{
+  "name": "UiKit",
+  "version": "1.0.0",
+  "description": "Text and drawing helpers shared by the screen renderers, built on GUI_Paint.",
+  "frameworks": "*",
+  "platforms": "*",
+  "dependencies": [
+    { "name": "WaveshareEPD" }
+  ]
+}

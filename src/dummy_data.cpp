@@ -36,3 +36,27 @@ void DummyData_Fill(CalView *view)
 
     view->statusLine = "Updated 14:32 - placeholder data";
 }
+
+/* A plausible fortnightly rota, collected on Tuesdays: food every week, black
+ * and blue/red on alternate weeks, garden every other week. Includes a day with
+ * three bins and one with two so the layout is exercised at both counts. */
+static const BinCollection kBins[] = {
+    { 2026,  8, 25, BIN_BLACK  }, { 2026,  8, 25, BIN_FOOD },
+    { 2026,  9,  1, BIN_BLUE   }, { 2026,  9,  1, BIN_FOOD }, { 2026,  9,  1, BIN_GARDEN },
+    { 2026,  9,  8, BIN_BLACK  }, { 2026,  9,  8, BIN_FOOD },
+    { 2026,  9, 15, BIN_RED    }, { 2026,  9, 15, BIN_FOOD }, { 2026,  9, 15, BIN_GARDEN },
+    { 2026,  9, 22, BIN_BLACK  }, { 2026,  9, 22, BIN_FOOD },
+    { 2026,  9, 29, BIN_BLUE   }, { 2026,  9, 29, BIN_FOOD }, { 2026,  9, 29, BIN_GARDEN },
+};
+
+void DummyBinData_Fill(BinView *view)
+{
+    view->todayYear  = DUMMY_YEAR;
+    view->todayMonth = DUMMY_MONTH;
+    view->todayDay   = DUMMY_DAY;
+
+    view->collections     = kBins;
+    view->collectionCount = (int)(sizeof(kBins) / sizeof(kBins[0]));
+
+    view->statusLine = "Updated 14:32 - placeholder data";
+}
